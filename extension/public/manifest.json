@@ -1,0 +1,38 @@
+{
+  "manifest_version": 3,
+  "name": "History Sidepanel",
+  "version": "1.0.0",
+  "description": "Show browsing history and page analytics in a side panel",
+
+  "permissions": [
+    "sidePanel",
+    "activeTab",
+    "storage",
+    "scripting"
+  ],
+
+  "host_permissions": [
+    "https://*/*",
+    "http://*/*"
+  ],
+
+  "background": {
+    "service_worker": "dist/background.js"
+  },
+
+  "content_scripts": [
+    {
+      "matches": ["https://*/*", "http://*/*"],
+      "js": ["dist/contentScript.js"],
+      "run_at": "document_idle"
+    }
+  ],
+
+  "side_panel": {
+    "default_path": "dist/sidepanel.html"
+  },
+
+  "action": {
+    "default_title": "Open History Sidepanel"
+  }
+}
