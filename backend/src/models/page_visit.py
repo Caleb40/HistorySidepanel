@@ -1,13 +1,7 @@
-from datetime import datetime
-
-import pytz
 from sqlalchemy import Column, Integer, DateTime, Text
 
 from src.core.db.database import Base
-
-
-def get_utc_now():
-    return datetime.now(pytz.UTC)
+from src.utils.helpers import get_utc_now
 
 
 class PageVisit(Base):
