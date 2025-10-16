@@ -9,6 +9,29 @@ from sqlalchemy.orm import sessionmaker
 
 from src.core.config import settings
 
+DATABASE_URI = settings.POSTGRES_URI
+DATABASE_PREFIX = settings.POSTGRES_ASYNC_PREFIX
+DATABASE_URL = f"{DATABASE_PREFIX}{DATABASE_URI}"
+
+async_engine = create_async_engine(
+    DATABASE_URL,
+    echo=False,  # Log all SQL queries to std. out (default=False)
+    future=True,
+    pool_size=10,  # active connections
+    max_overflow=20,  # extra connections beyond pool_size
+    pool_timeout=60,
+)
+
+local_session = sessionmaker(
+    bind=async_engine, class_=AsyncSession, expire_on_commit=False
+)
+
+
+async def async_get_db() -> AsyncGenerator[Any, Any]:
+    async_session = local_session
+    async with async_session() as db:
+        yield db
+
 
 class Base(DeclarativeBase):
     """Base model with created_at and updated_at timestamps"""
@@ -49,27 +72,3 @@ class TimestampMixin:
         onupdate=lambda: datetime.now(timezone.utc),
         nullable=False
     )
-
-
-DATABASE_URI = settings.POSTGRES_URI
-DATABASE_PREFIX = settings.POSTGRES_ASYNC_PREFIX
-DATABASE_URL = f"{DATABASE_PREFIX}{DATABASE_URI}"
-
-async_engine = create_async_engine(
-    DATABASE_URL,
-    echo=False,  # Log all SQL queries to std. out (default=False)
-    future=True,
-    pool_size=10,  # active connections
-    max_overflow=20,  # extra connections beyond pool_size
-    pool_timeout=60,
-)
-
-local_session = sessionmaker(
-    bind=async_engine, class_=AsyncSession, expire_on_commit=False
-)
-
-
-async def async_get_db() -> AsyncGenerator[Any, Any]:
-    async_session = local_session
-    async with async_session() as db:
-        yield db
