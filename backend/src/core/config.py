@@ -26,7 +26,7 @@ class AppSettings(BaseSettings):
 class CORSSettings(BaseSettings):
     ALLOWED_ORIGINS: List[str] = config(
         "ALLOWED_ORIGINS",
-        default="https://earniq.ai",
+        default="https:/localhost:3000",
         cast=lambda v: [s.strip() for s in v.split(",")],
     )
 
