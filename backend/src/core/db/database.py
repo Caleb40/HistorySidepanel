@@ -1,14 +1,18 @@
-from typing import Any, AsyncGenerator, Generator
+from datetime import datetime, timezone
+from typing import Any, AsyncGenerator
 
-from sqlalchemy import create_engine
+from sqlalchemy import DateTime
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.ext.asyncio.session import AsyncSession
-from sqlalchemy.orm import DeclarativeBase, MappedAsDataclass, sessionmaker, Session
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.orm import sessionmaker
 
 from src.core.config import settings
 
 
-class Base(DeclarativeBase, MappedAsDataclass):
+class Base(DeclarativeBase):
+    """Base model with created_at and updated_at timestamps"""
+
     def to_dict(self, exclude=None):
         """
         Convert the model instance to a dictionary.
@@ -28,6 +32,23 @@ class Base(DeclarativeBase, MappedAsDataclass):
             for column in self.__table__.columns.values()
             if column.name not in exclude
         }
+
+
+class TimestampMixin:
+    """Mixin to add created_at and updated_at timestamps to models"""
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+        nullable=False
+    )
 
 
 DATABASE_URI = settings.POSTGRES_URI

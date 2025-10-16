@@ -13,12 +13,3 @@ class PageVisit(Base):
     link_count = Column(Integer, nullable=False)
     word_count = Column(Integer, nullable=False)
     image_count = Column(Integer, nullable=False)
-
-    def to_dict(self, exclude=None):
-        if exclude is None:
-            exclude = []
-        return {
-            column.name: getattr(self, column.name)
-            for column in self.__table__.columns.values()
-            if column.name not in exclude
-        }
