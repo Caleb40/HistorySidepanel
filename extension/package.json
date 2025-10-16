@@ -3,12 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "main": "src/sidepanel/index.tsx",
-  "module": "src/sidepanel/index.tsx",
+  "main": "src/sidepanel/main.tsx",
+  "module": "src/sidepanel/main.tsx",
   "scripts": {
-    "dev": "bun --hot src/sidepanel/index.tsx",
+    "dev": "bun --hot src/sidepanel/main.tsx",
     "build": "bun build src/sidepanel/index.html --outdir=dist --sourcemap --target=browser --minify --define:process.env.NODE_ENV='\"production\"' --env='BUN_PUBLIC_*'",
-    "start": "NODE_ENV=production bun src/sidepanel/index.tsx"
+    "start": "NODE_ENV=production bun src/sidepanel/main.tsx"
   },
   "dependencies": {
     "react": "^19",
