@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional, List
+from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -24,11 +24,12 @@ class VisitCreate(BaseModel):
 
 class VisitResponse(BaseModel):
     id: int
-    datetime_visited: datetime
     url: str
     link_count: int
     word_count: int
     image_count: int
+    created_at: datetime
+    updated_at: datetime
 
     class Config:
         from_attributes = True
@@ -39,11 +40,6 @@ class PaginatedVisitsResponse(BaseModel):
     total: int
     page: int
     items_per_page: int
-
-
-class HealthResponse(BaseModel):
-    status: str
-    timestamp: datetime
 
 
 class StatsResponse(BaseModel):

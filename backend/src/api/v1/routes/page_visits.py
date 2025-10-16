@@ -25,15 +25,12 @@ async def create_visit(
 ):
     """Create a new page visit record"""
     try:
-        # Use provided datetime or current time
-        visit_time = visit.datetime_visited or datetime.now(timezone.utc)
 
         db_visit = PageVisit(
             url=visit.url,
             link_count=visit.link_count,
             word_count=visit.word_count,
             image_count=visit.image_count,
-            datetime_visited=visit_time
         )
 
         db.add(db_visit)
