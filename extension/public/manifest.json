@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "History Sidepanel",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "Show browsing history and page analytics in a side panel",
 
   "permissions": [
@@ -17,19 +17,19 @@
   ],
 
   "background": {
-    "service_worker": "dist/background.js"
+    "service_worker": "background.js"
   },
 
   "content_scripts": [
     {
       "matches": ["https://*/*", "http://*/*"],
-      "js": ["dist/contentScript.js"],
+      "js": ["contentScript.js"],
       "run_at": "document_idle"
     }
   ],
 
   "side_panel": {
-    "default_path": "dist/sidepanel.html"
+    "default_path": "sidepanel.html"
   },
 
   "action": {
