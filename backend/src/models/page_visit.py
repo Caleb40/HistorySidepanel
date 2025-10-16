@@ -1,14 +1,12 @@
-from sqlalchemy import Column, Integer, DateTime, Text
+from sqlalchemy import Column, Integer, Text
 
-from src.core.db.database import Base
-from src.utils.helpers import get_utc_now
+from src.core.db.database import TimestampMixin, Base
 
 
-class PageVisit(Base):
+class PageVisit(Base, TimestampMixin):
     __tablename__ = "visits"
 
     id = Column(Integer, primary_key=True, index=True)
-    datetime_visited = Column(DateTime(timezone=True), default=get_utc_now, nullable=False)
     url = Column(Text, nullable=False, index=True)
     link_count = Column(Integer, nullable=False)
     word_count = Column(Integer, nullable=False)
