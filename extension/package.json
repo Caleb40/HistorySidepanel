@@ -3,11 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "main": "src/sidepanel/main.tsx",
-  "module": "src/sidepanel/main.tsx",
   "scripts": {
     "dev": "bun --hot src/sidepanel/main.tsx",
-    "build": "bun build src/sidepanel/index.html --outdir=dist --sourcemap --target=browser --minify --define:process.env.NODE_ENV='\"production\"' --env='BUN_PUBLIC_*'",
+    "build": "bun run build:sidepanel && bun run build:background && bun run build:content && bun run copy:public",
+    "build:sidepanel": "bun build src/sidepanel/main.tsx --outdir=dist --target=browser --format=esm --external:react --external:react-dom",
+    "build:background": "bun build src/background/background.ts --outdir=dist --target=browser --format=esm",
+    "build:content": "bun build src/content-script/contentScript.ts --outdir=dist --target=browser --format=esm",
+    "copy:public": "cp public/* dist/ 2>/dev/null || true",
     "start": "NODE_ENV=production bun src/sidepanel/main.tsx"
   },
   "dependencies": {
