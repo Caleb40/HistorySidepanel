@@ -2,7 +2,7 @@
  * Handles URL normalization and determines when to record new visits
  */
 
-export class URLNormalizer {
+export class UrlUtils {
   /**
    * Normalizes URL by removing query params, hash fragments, and www subdomain
    * Example:

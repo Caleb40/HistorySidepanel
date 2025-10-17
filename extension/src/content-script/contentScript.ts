@@ -3,8 +3,7 @@
  * Runs in the context of the web page
  */
 
-import {PageMetrics} from '@/common';
-import {URLNormalizer} from './urlNormalizer';
+import {PageMetrics, UrlUtils} from '@/common';
 import {ImageAnalyzer, LinkAnalyzer, TextAnalyzer} from "@/content-script";
 
 
@@ -37,9 +36,9 @@ class NavigationHandler {
   static handleNavigation(newUrl: string): void {
     clearTimeout(this.navigationTimer);
     this.navigationTimer = window.setTimeout(() => {
-      if (URLNormalizer.shouldRecordNewVisit(this.lastUrl, newUrl)) {
+      if (UrlUtils.shouldRecordNewVisit(this.lastUrl, newUrl)) {
         this.lastUrl = newUrl;
-        console.log('Recording new visit for:', URLNormalizer.getDisplayUrl(newUrl));
+        console.log('Recording new visit for:', UrlUtils.getDisplayUrl(newUrl));
         sendPageMetrics();
       }
     }, 300);
@@ -147,7 +146,7 @@ function setupContentScriptListeners(): void {
 }
 
 function initializeContentScript(): void {
-  console.log('Initializing content script for:', URLNormalizer.getDisplayUrl(window.location.href));
+  console.log('Initializing content script for:', UrlUtils.getDisplayUrl(window.location.href));
 
   // Set initial URL and record first visit
   NavigationHandler.setInitialUrl(window.location.href);

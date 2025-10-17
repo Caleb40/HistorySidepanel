@@ -1,7 +1,6 @@
 import './styles.css';
 import React, {useEffect, useState} from 'react';
-import {API_BASE_URL, apiRequest, formatDateTime, GlobalStats, MessagePayload, VisitData} from "@/common";
-import {URLNormalizer} from '@/content-script/urlNormalizer';
+import {API_BASE_URL, apiRequest, formatDateTime, GlobalStats, MessagePayload, UrlUtils, VisitData} from "@/common";
 
 const App: React.FC = () => {
   const [currentMetrics, setCurrentMetrics] = useState<VisitData | null>(null);
@@ -158,7 +157,7 @@ const App: React.FC = () => {
       <main className="app-content">
         <section className="current-page-section">
           <div className="url-display">
-            Current Site: <b>{URLNormalizer.getDisplayUrl(currentUrl)}</b>
+            Current Site: <b>{UrlUtils.getDisplayUrl(currentUrl)}</b>
           </div>
 
           {currentMetrics ? (
