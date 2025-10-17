@@ -58,36 +58,62 @@ class BackgroundService {
   }
 
   public static initializeMessageHandlers(): void {
-    chrome.runtime.onMessage.addListener((message: {
-      type: string;
-      data: VisitData;
-    }, sender: any, sendResponse: (arg0: { success: boolean; }) => void) => {
+    chrome.runtime.onMessage.addListener((message: any, sender: any, sendResponse: (arg0: {
+      success: boolean; error?: any;
+    }) => void) => {
+      console.log('Background received message:', message);
+
       if (message.type === 'PAGE_VISIT') {
-        // we won't wait for the API call to complete
         this.recordVisit(message.data).finally(() => {
           sendResponse({success: true});
         });
+        return true;
+      }
 
-        // Return true to indicate we'll send response asynchronously
+      if (message.type === 'OPEN_SIDE_PANEL') {
+        console.log('Opening side panel via message');
+        chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
+          if (tabs[0]?.id) {
+            chrome.sidePanel.open({windowId: tabs[0].windowId})
+              .then(() => {
+                console.log('Side panel opened via message');
+                sendResponse({success: true});
+              })
+              .catch((error) => {
+                console.error('Failed to open side panel via message:', error);
+                sendResponse({success: false, error: error.message});
+              });
+          }
+        });
         return true;
       }
     });
   }
 
   public static initializeSidePanel(): void {
+    console.log('=== SIDE PANEL DEBUG INFO ===');
+    console.log('Chrome version:', navigator.userAgent);
+    console.log('Side panel API available:', !!chrome.sidePanel);
+
+    const isChrome = navigator.userAgent.includes('Chrome') &&
+      !navigator.userAgent.includes('Edg') &&
+      !navigator.userAgent.includes('Arc');
+
+    if (!isChrome || !chrome.sidePanel) {
+      console.warn('Side panel not supported in this browser. Please use Google Chrome.');
+      return;
+    }
+
     // open side panel when extension icon is clicked
     chrome.action.onClicked.addListener((tab) => {
       if (tab.id) {
-        chrome.sidePanel.open({windowId: tab.windowId});
+        chrome.sidePanel.open({windowId: tab.windowId})
+          .then(() => console.log('Side panel opened via icon click'))
+          .catch((error) => console.error('Failed to open side panel:', error));
       }
     });
 
-    // Optional: Automatically open side panel on specific sites
-    chrome.tabs.onUpdated.addListener((tabId, info, tab) => {
-      if (info.status === 'complete' && tab.url) {
-        // TODO: We could add logic here to auto-open on specific domains
-      }
-    });
+    console.log('Side panel initialization complete');
   }
 }
 
@@ -101,7 +127,6 @@ chrome.runtime.onInstalled.addListener((details: { reason: string; }) => {
     console.log('History Sidepanel extension installed');
   }
 });
-
 // Keep service worker alive
 chrome.runtime.onStartup.addListener(() => {
   console.log('History Sidepanel extension starting up');
