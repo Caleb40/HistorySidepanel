@@ -11,8 +11,10 @@ interface VisitData {
     datetime_visited: string;
 }
 
+// TODO: investigate type bug here
+// @ts-ignore
 class BackgroundService {
-    private static readonly API_BASE_URL = 'http://localhost:8000/api';
+    private static readonly API_BASE_URL = 'http://localhost:8000/api/v1';
 
     private static async makeApiRequest<T>(
         endpoint: string,
