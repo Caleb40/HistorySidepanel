@@ -3,13 +3,8 @@
  * Runs in the context of the web page
  */
 
-interface PageMetrics {
-  url: string;
-  link_count: number;
-  image_count: number;
-  word_count: number;
-  datetime_visited: string;
-}
+import {PageMetrics} from '@/common';
+import {URLNormalizer} from './urlNormalizer';
 
 class PageMetricsExtractor {
   private static cleanText(text: string): string {
@@ -22,7 +17,7 @@ class PageMetricsExtractor {
   private static countWords(): number {
     const bodyText = document.body.innerText || '';
     const cleanedText = this.cleanText(bodyText);
-    return cleanedText ? cleanedText.split(' ').length : 0;
+    return cleanedText ? cleanedText.split(/\s+/).length : 0;
   }
 
   private static countLinks(): number {
@@ -44,7 +39,48 @@ class PageMetricsExtractor {
   }
 }
 
-function addSidePanelButton() {
+class NavigationHandler {
+  private static lastNormalizedUrl: string = '';
+
+  static handleNavigation(newUrl: string): void {
+    const normalizedNew = URLNormalizer.normalizeUrl(newUrl);
+
+    if (this.lastNormalizedUrl !== normalizedNew) {
+      console.log('🔔 Recording new visit for:', URLNormalizer.getDisplayUrl(newUrl));
+      this.lastNormalizedUrl = normalizedNew;
+      sendPageMetrics();
+    } else {
+      console.log('⏭️ Skipping - same normalized URL:', URLNormalizer.getDisplayUrl(newUrl));
+    }
+  }
+
+  static setInitialUrl(url: string): void {
+    this.lastNormalizedUrl = URLNormalizer.normalizeUrl(url);
+  }
+}
+
+// Send metrics when the page loads
+function sendPageMetrics(): void {
+  try {
+    const metrics = PageMetricsExtractor.extractMetrics();
+
+    chrome.runtime.sendMessage({
+      type: 'PAGE_VISIT',
+      data: metrics
+    }, (response: any) => {
+      if (chrome.runtime.lastError) {
+        console.warn('Extension context invalidated:', chrome.runtime.lastError);
+        return;
+      }
+      console.log('Page metrics sent successfully');
+    });
+  } catch (error) {
+    console.error('Error extracting page metrics:', error);
+  }
+}
+
+
+function addSidePanelButton(): void {
   // Remove existing button if it exists
   const existingButton = document.getElementById('history-sidepanel-button');
   if (existingButton) {
@@ -103,32 +139,38 @@ function addSidePanelButton() {
   console.log('Side panel button added to page');
 }
 
-// Send metrics when the page loads
-const sendPageMetrics = (): void => {
-  try {
-    const metrics = PageMetricsExtractor.extractMetrics();
+// Add message listener to content script
+function setupContentScriptListeners(): void {
+  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    console.log('Content script received message:', message);
 
-    chrome.runtime.sendMessage({
-      type: 'PAGE_VISIT',
-      data: metrics
-    }, (response: any) => {
-      if (chrome.runtime.lastError) {
-        console.warn('Extension context invalidated:', chrome.runtime.lastError);
-        return;
-      }
-      console.log('Page metrics sent successfully:', metrics);
-    });
-  } catch (error) {
-    console.error('Error extracting page metrics:', error);
-  }
-};
+    if (message.type === 'TAB_UPDATED') {
+      console.log('Content script: Tab updated to', message.url);
+      NavigationHandler.handleNavigation(message.url);
+      sendResponse({success: true});
+    }
 
-function initializeContentScript() {
+    return true;
+  });
+}
+
+function initializeContentScript(): void {
+  console.log('🚀 Initializing content script for:', URLNormalizer.getDisplayUrl(window.location.href));
+
+  // Set initial URL and record first visit
+  NavigationHandler.setInitialUrl(window.location.href);
+  sendPageMetrics();
+
   // Add the side panel button
   addSidePanelButton();
 
-  // Send page metrics
-  sendPageMetrics();
+  // Setup listeners for updates
+  setupContentScriptListeners();
+}
+
+// Handle navigation changes (SPA support)
+function handleNavigationChange(): void {
+  NavigationHandler.handleNavigation(window.location.href);
 }
 
 // Run when DOM is ready
@@ -138,16 +180,13 @@ if (document.readyState === 'loading') {
   initializeContentScript();
 }
 
-// Handle SPA navigation
+// Handle SPA navigation via DOM mutations
 let lastUrl = window.location.href;
 const observer = new MutationObserver(() => {
   if (window.location.href !== lastUrl) {
     lastUrl = window.location.href;
-    setTimeout(() => {
-      // Re-add button and send metrics for new page
-      addSidePanelButton();
-      sendPageMetrics();
-    }, 1000);
+    console.log('URL changed via DOM mutation');
+    handleNavigationChange();
   }
 });
 
@@ -156,7 +195,7 @@ observer.observe(document.body, {
   subtree: true
 });
 
-// Also handle history API changes (for SPAs)
+// Handle SPA navigation via History API
 let originalPushState = history.pushState;
 let originalReplaceState = history.replaceState;
 
@@ -171,10 +210,3 @@ history.replaceState = function (...args) {
 };
 
 window.addEventListener('popstate', handleNavigationChange);
-
-function handleNavigationChange() {
-  setTimeout(() => {
-    addSidePanelButton();
-    sendPageMetrics();
-  }, 500);
-}

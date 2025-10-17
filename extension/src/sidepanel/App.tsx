@@ -1,23 +1,7 @@
 import './styles.css';
 import React, {useEffect, useState} from 'react';
-import {formatDateTime} from "@/common";
-
-interface VisitData {
-  id: number;
-  created_at: string;
-  url: string;
-  link_count: number;
-  word_count: number;
-  image_count: number;
-}
-
-interface GlobalStats {
-  total_visits: number;
-  unique_urls: number;
-  average_links: number;
-  average_words: number;
-  average_images: number;
-}
+import {formatDateTime, GlobalStats, MessagePayload, VisitData} from "@/common";
+import {URLNormalizer} from '@/content-script/urlNormalizer';
 
 const App: React.FC = () => {
   const [currentMetrics, setCurrentMetrics] = useState<VisitData | null>(null);
@@ -29,7 +13,34 @@ const App: React.FC = () => {
 
   useEffect(() => {
     initializeSidepanel();
+    setupMessageListeners();
+
+    return () => {
+      // Cleanup listeners
+      if (chrome.runtime?.onMessage) {
+        chrome.runtime.onMessage.removeListener(handleExternalMessage);
+      }
+    };
   }, []);
+
+  // Event driven message handling
+  const setupMessageListeners = () => {
+    if (chrome.runtime?.onMessage) {
+      chrome.runtime.onMessage.addListener(handleExternalMessage);
+    }
+  };
+
+  const handleExternalMessage = (message: MessagePayload, sender: any, sendResponse: any) => {
+    console.log('Side panel received message:', message);
+
+    if (message.type === 'PAGE_LOADED' || message.type === 'TAB_SWITCHED' || message.type === 'PAGE_VISIT_RECORDED') {
+      // Immediate refresh when page changes or new visit is recorded
+      refreshAllData();
+      sendResponse({success: true});
+    }
+
+    return true;
+  };
 
   const initializeSidepanel = async (): Promise<void> => {
     try {
@@ -41,6 +52,18 @@ const App: React.FC = () => {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to initialize sidepanel');
       setLoading(false);
+    }
+  };
+
+  const refreshAllData = async (): Promise<void> => {
+    try {
+      const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
+      if (tab?.url) {
+        setCurrentUrl(tab.url);
+        await fetchPageData(tab.url);
+      }
+    } catch (err) {
+      console.error('Error refreshing data:', err);
     }
   };
 
@@ -113,13 +136,13 @@ const App: React.FC = () => {
       <main className="app-content">
         <section className="current-page-section">
           <div className="url-display">
-            Current Site's Link: <b>{currentUrl.replace(/^https?:\/\//, '')}</b>
+            Current Site: <b>{URLNormalizer.getDisplayUrl(currentUrl)}</b>
           </div>
 
           {currentMetrics && (
             <div className="metrics-grid">
               <div className="metric-row">
-                <div className="metric-label">Number of Links:</div>
+                <div className="metric-label">Links</div>
                 <div className="metric-value">{currentMetrics.link_count}</div>
               </div>
               <div className="metric-row">
