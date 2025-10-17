@@ -2,10 +2,9 @@ import logging
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.params import Query
 from sqlalchemy import select, desc, func
 from sqlalchemy.ext.asyncio.session import AsyncSession
-from fastapi.params import Query
-
 
 from src.core.db.database import async_get_db
 from src.models.page_visit import PageVisit
@@ -56,14 +55,44 @@ async def create_visit(
 
 
 @router.get(
+    "/visits",
+    response_model=List[VisitResponse],
+    summary="Get visits by URL",
+    description="Retrieve all visit records for a specific URL, ordered by most recent first"
+)
+async def get_visits_by_url(
+        url: str = Query(..., description="URL to filter visits by"),
+        db: AsyncSession = Depends(async_get_db)
+):
+    """Get all visits for a specific URL"""
+    try:
+        result = await db.execute(
+            select(PageVisit)
+            .where(PageVisit.url == url)
+            .order_by(desc(PageVisit.created_at))
+        )
+        visits = result.scalars().all()
+
+        logger.info(f"Retrieved {len(visits)} visits for {url}")
+        return visits
+
+    except Exception as e:
+        logger.error(f"Error retrieving visits: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve visits"
+        )
+
+
+@router.get(
     "/visits/latest",
     response_model=VisitResponse,
     summary="Get latest visit for URL",
     description="Retrieve the most recent visit record for a specific URL"
 )
 async def get_latest_visit(
-    url: str = Query(..., description="URL to filter visits by"),
-    db: AsyncSession = Depends(async_get_db)
+        url: str = Query(..., description="URL to filter visits by"),
+        db: AsyncSession = Depends(async_get_db)
 ):
     """Get the most recent visit for a specific URL"""
     try:
@@ -92,6 +121,7 @@ async def get_latest_visit(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve latest visit"
         )
+
 
 @router.get(
     "/visits/stats",
@@ -137,6 +167,7 @@ async def get_visit_stats(db: AsyncSession = Depends(async_get_db)):
             detail="Failed to retrieve statistics"
         )
 
+
 @router.get(
     "/visits/recent",
     response_model=List[VisitResponse],
@@ -144,8 +175,8 @@ async def get_visit_stats(db: AsyncSession = Depends(async_get_db)):
     description="Retrieve the most recent visits across all URLs"
 )
 async def get_recent_visits(
-    limit: int = Query(10, ge=1, le=100),
-    db: AsyncSession = Depends(async_get_db)
+        limit: int = Query(10, ge=1, le=100),
+        db: AsyncSession = Depends(async_get_db)
 ):
     """Get the most recent visits across all URLs"""
     try:
