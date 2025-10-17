@@ -138,49 +138,34 @@ async def get_latest_visit(
 async def get_visit_stats(db: AsyncSession = Depends(async_get_db)):
     """Get overall statistics about visits"""
     try:
-        # Total visits count
-        total_result = await db.execute(select(func.count(PageVisit.id)))
-        total_visits = total_result.scalar_one()
-
-        # Unique URLs count
-        unique_urls_result = await db.execute(
-            select(func.count(func.distinct(PageVisit.url)))
+        # Fetch all relevant stats in one query, and perform rounding from the DB for extra performance
+        stats_query = select(
+            func.count(PageVisit.id).label('total_visits'),
+            func.count(func.distinct(PageVisit.url)).label('unique_urls'),
+            func.round(func.avg(PageVisit.link_count), 2).label('avg_links'),
+            func.round(func.avg(PageVisit.internal_links), 2).label('avg_internal_links'),
+            func.round(func.avg(PageVisit.external_links), 2).label('avg_external_links'),
+            func.round(func.avg(PageVisit.word_count), 2).label('avg_words'),
+            func.round(func.avg(PageVisit.image_count), 2).label('avg_images'),
+            func.round(func.avg(PageVisit.content_images), 2).label('avg_content_images'),
+            func.round(func.avg(PageVisit.decorative_images), 2).label('avg_decorative_images')
         )
-        unique_urls = unique_urls_result.scalar_one()
 
-        # Average metrics
-        avg_links_result = await db.execute(select(func.avg(PageVisit.link_count)))
-        avg_links = round(avg_links_result.scalar_one() or 0, 2)
+        result = await db.execute(stats_query)
+        stats = result.first()
 
-        avg_internal_links_result = await db.execute(select(func.avg(PageVisit.internal_links)))
-        avg_internal_links = round(avg_internal_links_result.scalar_one() or 0, 2)
-
-        avg_external_links_result = await db.execute(select(func.avg(PageVisit.external_links)))
-        avg_external_links = round(avg_external_links_result.scalar_one() or 0, 2)
-
-        avg_words_result = await db.execute(select(func.avg(PageVisit.word_count)))
-        avg_words = round(avg_words_result.scalar_one() or 0, 2)
-
-        avg_images_result = await db.execute(select(func.avg(PageVisit.image_count)))
-        avg_images = round(avg_images_result.scalar_one() or 0, 2)
-
-        avg_content_images_result = await db.execute(select(func.avg(PageVisit.content_images)))
-        avg_content_images = round(avg_content_images_result.scalar_one() or 0, 2)
-
-        avg_decorative_images_result = await db.execute(select(func.avg(PageVisit.decorative_images)))
-        avg_decorative_images = round(avg_decorative_images_result.scalar_one() or 0, 2)
-
-        return {
-            "total_visits": total_visits,
-            "unique_urls": unique_urls,
-            "average_links": avg_links,
-            "average_internal_links": avg_internal_links,
-            "average_external_links": avg_external_links,
-            "average_words": avg_words,
-            "average_images": avg_images,
-            "average_content_images": avg_content_images,
-            "average_decorative_images": avg_decorative_images
+        # convert to dictionary with None handling
+        stats_dict = {
+            key: getattr(stats, key) or 0
+            for key in [
+                'total_visits', 'unique_urls', 'avg_links', 'avg_internal_links',
+                'avg_external_links', 'avg_words', 'avg_images',
+                'avg_content_images', 'avg_decorative_images'
+            ]
         }
+
+        logger.info(f"Retrieved stats: {stats_dict['total_visits']} visits, {stats_dict['unique_urls']} unique URLs")
+        return stats_dict
 
     except Exception as e:
         logger.error(f"Error retrieving stats: {str(e)}", exc_info=True)

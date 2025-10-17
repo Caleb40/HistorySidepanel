@@ -1,11 +1,11 @@
 export interface PageMetrics {
   url: string;
   link_count: number;
-  internal_links?: number;      // NEW
-  external_links?: number;      // NEW
+  internal_links?: number;
+  external_links?: number;
   image_count: number;
-  content_images?: number;      // NEW
-  decorative_images?: number;   // NEW
+  content_images?: number;
+  decorative_images?: number;
   word_count: number;
   datetime_visited: string;
 }
