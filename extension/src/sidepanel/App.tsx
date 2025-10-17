@@ -1,6 +1,6 @@
 import './styles.css';
 import React, {useEffect, useState} from 'react';
-import {apiRequest, formatDateTime, GlobalStats, MessagePayload, VisitData} from "@/common";
+import {API_BASE_URL, apiRequest, formatDateTime, GlobalStats, MessagePayload, VisitData} from "@/common";
 import {URLNormalizer} from '@/content-script/urlNormalizer';
 
 const App: React.FC = () => {
@@ -73,9 +73,9 @@ const App: React.FC = () => {
       setError('');
 
       const [metrics, history, stats] = await Promise.allSettled([
-        apiRequest(`http://localhost:8000/api/v1/visits/latest?url=${encodeURIComponent(url)}`),
-        apiRequest(`http://localhost:8000/api/v1/visits?url=${encodeURIComponent(url)}`).then(h => h || []),
-        apiRequest('http://localhost:8000/api/v1/visits/stats')
+        apiRequest(`${API_BASE_URL}/visits/latest?url=${encodeURIComponent(url)}`),
+        apiRequest(`${API_BASE_URL}/visits?url=${encodeURIComponent(url)}`).then(h => h || []),
+        apiRequest(`${API_BASE_URL}/visits/stats`)
       ]);
 
       // Handle metrics result

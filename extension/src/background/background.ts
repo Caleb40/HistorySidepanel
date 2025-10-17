@@ -3,40 +3,12 @@
  * Handles API communication and side panel management
  */
 
-import {MessagePayload, PageMetrics} from '@/common';
+import {API_BASE_URL, apiRequest, MessagePayload, PageMetrics} from '@/common';
 
 class BackgroundService {
-  private static readonly API_BASE_URL = 'http://localhost:8000/api/v1';
-
-  private static async makeApiRequest<T>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<T> {
-    const url = `${this.API_BASE_URL}${endpoint}`;
-
-    try {
-      const response = await fetch(url, {
-        headers: {
-          'Content-Type': 'application/json',
-          ...options.headers,
-        },
-        ...options,
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error(`API request failed for ${endpoint}:`, error);
-      throw error;
-    }
-  }
-
   public static async recordVisit(visitData: PageMetrics): Promise<void> {
     try {
-      await this.makeApiRequest('/visits', {
+      await apiRequest(`${API_BASE_URL}/visits`, {
         method: 'POST',
         body: JSON.stringify(visitData),
       });
@@ -45,7 +17,7 @@ class BackgroundService {
       // Notify side panels about the new visit
       this.notifySidePanels('PAGE_VISIT_RECORDED', visitData.url);
     } catch (error) {
-      console.error('ailed to record visit:', error);
+      console.error('Failed to record visit:', error);
     }
   }
 
