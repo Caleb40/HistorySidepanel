@@ -30,22 +30,24 @@ class PageMetricsExtractor {
 }
 
 class NavigationHandler {
-  private static lastNormalizedUrl: string = '';
+  private static lastUrl: string = window.location.href;
+
+  private static navigationTimer: number | undefined;
 
   static handleNavigation(newUrl: string): void {
-    const normalizedNew = URLNormalizer.normalizeUrl(newUrl);
-
-    if (this.lastNormalizedUrl !== normalizedNew) {
-      console.log('🔔 Recording new visit for:', URLNormalizer.getDisplayUrl(newUrl));
-      this.lastNormalizedUrl = normalizedNew;
-      sendPageMetrics();
-    } else {
-      console.log('⏭️ Skipping - same normalized URL:', URLNormalizer.getDisplayUrl(newUrl));
-    }
+    clearTimeout(this.navigationTimer);
+    this.navigationTimer = window.setTimeout(() => {
+      if (URLNormalizer.shouldRecordNewVisit(this.lastUrl, newUrl)) {
+        this.lastUrl = newUrl;
+        console.log('Recording new visit for:', URLNormalizer.getDisplayUrl(newUrl));
+        sendPageMetrics();
+      }
+    }, 300);
   }
 
+
   static setInitialUrl(url: string): void {
-    this.lastNormalizedUrl = URLNormalizer.normalizeUrl(url);
+    this.lastUrl = url;
   }
 }
 
@@ -145,7 +147,7 @@ function setupContentScriptListeners(): void {
 }
 
 function initializeContentScript(): void {
-  console.log('🚀 Initializing content script for:', URLNormalizer.getDisplayUrl(window.location.href));
+  console.log('Initializing content script for:', URLNormalizer.getDisplayUrl(window.location.href));
 
   // Set initial URL and record first visit
   NavigationHandler.setInitialUrl(window.location.href);

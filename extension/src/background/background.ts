@@ -3,7 +3,7 @@
  * Handles API communication and side panel management
  */
 
-import {MessagePayload, PageMetrics} from '@/common/types';
+import {MessagePayload, PageMetrics} from '@/common';
 
 class BackgroundService {
   private static readonly API_BASE_URL = 'http://localhost:8000/api/v1';
