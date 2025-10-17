@@ -52,13 +52,13 @@ User Action → Side Panel ← Live Updates ← Backend API
 
 ## ⚙️ Key Technical Decisions
 
-| Decision                          | Rationale                               | Impact                           |
-|-----------------------------------| --------------------------------------- | -------------------------------- |
-| **FastAPI + Async SQLAlchemy**    | Native async stack                      | Non-blocking, high concurrency   |
-| **PostgreSQL**                    | Analytical query performance            | Fast lookups, structured metrics |
-| **Vite/Bun + React (Side Panel)** | Hot reload & modular multi-entry build  | Developer efficiency             |
-| **Event-Driven Messaging**        | Content ↔ Background ↔ UI communication | Real-time updates                |
-| **Dockerized Services**           | Environment consistency                 | Easy deployment and isolation    |
+| Decision                          | Rationale                                     | Impact                           |
+|-----------------------------------|-----------------------------------------------| -------------------------------- |
+| **FastAPI + Async SQLAlchemy**    | Native async stack                            | Non-blocking, high concurrency   |
+| **PostgreSQL**                    | Performance and  compatibility | Fast lookups, structured metrics |
+| **Vite/Bun + React (Side Panel)** | Hot reload & modular multi-entry build        | Developer efficiency             |
+| **Event-Driven Messaging**        | Content ↔ Background ↔ UI communication       | Real-time updates                |
+| **Dockerized Services**           | Environment consistency                       | Easy deployment and isolation    |
 
 ---
 
@@ -74,7 +74,7 @@ User Action → Side Panel ← Live Updates ← Backend API
 
 * Selective DOM parsing (visible elements only)
 * SPA detection via MutationObserver + History API
-* Debounced updates to reduce API chatter
+* Debounced updates to reduce polling and API chatter
 
 ---
 
