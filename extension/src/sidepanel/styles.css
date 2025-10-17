@@ -250,3 +250,134 @@ body {
 .history-list::-webkit-scrollbar-thumb:hover {
   background: var(--text-secondary);
 }
+
+.app {
+  width: 450px;
+  min-height: 600px;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-color);
+  overflow: hidden; /* Prevent outer scrolling */
+}
+
+.app-content {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.metric-card {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  background: var(--background-color);
+  border-radius: var(--border-radius);
+  border: 1px solid var(--border-color);
+  gap: 12px;
+  min-height: 60px;
+}
+
+.metric-content {
+  flex: 1;
+  min-width: 0; /* Allow text truncation */
+}
+
+.metric-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.metric-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  word-break: break-word;
+}
+
+.metric-value-date {
+  font-size: 11px;
+  font-weight: normal;
+  color: var(--text-secondary);
+}
+
+.history-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 200px;
+}
+
+.history-list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.history-item {
+  padding: 12px;
+  background: var(--background-color);
+  border-radius: var(--border-radius);
+  border: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.history-date {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.history-metrics {
+  display: flex;
+  gap: 12px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.history-metrics span {
+  white-space: nowrap;
+}
+
+.url-display {
+  font-size: 12px;
+  color: var(--text-secondary);
+  background: var(--background-color);
+  padding: 8px 12px;
+  border-radius: var(--border-radius);
+  margin-bottom: 16px;
+  word-break: break-all;
+  border: 1px solid var(--border-color);
+  line-height: 1.4;
+}
+
+/* Ensure sections don't overflow */
+.current-page-section,
+.history-section {
+  min-height: 0; /* Allow shrinking */
+}
+
+.current-page-section {
+  flex-shrink: 0; /* Don't shrink this section */
+}
+
+.history-section {
+  flex: 1; /* Take remaining space */
+  min-height: 200px;
+}

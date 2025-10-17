@@ -4,7 +4,7 @@ import {formatDateTime} from "@/common";
 
 interface VisitData {
   id: number;
-  datetime_visited: string;
+  created_at: string;
   url: string;
   link_count: number;
   word_count: number;
@@ -66,7 +66,7 @@ const App: React.FC = () => {
       setLoading(false);
     }
   };
-  
+
   const handleRefresh = (): void => {
     if (currentUrl) {
       fetchPageData(currentUrl);
@@ -129,7 +129,7 @@ const App: React.FC = () => {
               />
               <MetricCard
                 label="Last Visit"
-                value={formatDateTime(currentMetrics.datetime_visited)}
+                value={formatDateTime(currentMetrics.created_at)}
                 icon="🕒"
                 isDate
               />
@@ -182,7 +182,7 @@ interface HistoryItemProps {
 
 const HistoryItem: React.FC<HistoryItemProps> = ({visit}) => (
   <div className="history-item">
-    <div className="history-date">{formatDateTime(visit.datetime_visited)}</div>
+    <div className="history-date">{formatDateTime(visit.created_at)}</div>
     <div className="history-metrics">
       <span>🔗 {visit.link_count}</span>
       <span>🖼️ {visit.image_count}</span>

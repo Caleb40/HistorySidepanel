@@ -4,11 +4,12 @@
  */
 
 interface VisitData {
+  id: number;
+  created_at: string;
   url: string;
   link_count: number;
-  image_count: number;
   word_count: number;
-  datetime_visited: string;
+  image_count: number;
 }
 
 // TODO: investigate type bug here

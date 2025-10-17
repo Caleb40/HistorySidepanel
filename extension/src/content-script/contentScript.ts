@@ -11,6 +11,7 @@ interface PageMetrics {
   datetime_visited: string;
 }
 
+// @ts-ignore
 class PageMetricsExtractor {
   private static cleanText(text: string): string {
     return text
@@ -76,7 +77,7 @@ let lastUrl = window.location.href;
 const observer = new MutationObserver(() => {
   if (window.location.href !== lastUrl) {
     lastUrl = window.location.href;
-    setTimeout(sendPageMetrics, 1000); // Wait for SPA to settle
+    setTimeout(sendPageMetrics, 1000);
   }
 });
 
