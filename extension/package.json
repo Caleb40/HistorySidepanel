@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "bun --hot src/sidepanel/main.tsx",
-    "build": "bun run build:sidepanel && bun run build:background && bun run build:content && bun run copy:public",
+    "build": "node build.js",
+    "build:vite": "vite build",
+    "build:bun": "bun run build:sidepanel && bun run build:background && bun run build:content && bun run copy:public",
     "build:sidepanel": "bun build src/sidepanel/main.tsx --outdir=dist --target=browser --format=esm --external:react --external:react-dom",
     "build:background": "bun build src/background/background.ts --outdir=dist --target=browser --format=esm",
     "build:content": "bun build src/content-script/contentScript.ts --outdir=dist --target=browser --format=esm",
@@ -21,11 +23,7 @@
     "@types/chrome": "^0.1.24",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "vite": "^7.1.10"
-  },
-  "paths": {
-    "@/*": [
-      "src/*"
-    ]
+    "vite": "^7.1.10",
+    "@vitejs/plugin-react": "^4.3.4"
   }
 }
