@@ -1,6 +1,6 @@
 import './styles.css';
 import React, {useEffect, useState} from 'react';
-import {formatDateTime, GlobalStats, MessagePayload, VisitData} from "@/common";
+import {apiRequest, formatDateTime, GlobalStats, MessagePayload, VisitData} from "@/common";
 import {URLNormalizer} from '@/content-script/urlNormalizer';
 
 const App: React.FC = () => {
@@ -72,27 +72,49 @@ const App: React.FC = () => {
       setLoading(true);
       setError('');
 
-      const [metricsResponse, historyResponse, statsResponse] = await Promise.all([
-        fetch(`http://localhost:8000/api/v1/visits/latest?url=${encodeURIComponent(url)}`),
-        fetch(`http://localhost:8000/api/v1/visits?url=${encodeURIComponent(url)}`),
-        fetch('http://localhost:8000/api/v1/visits/stats')
+      const [metrics, history, stats] = await Promise.allSettled([
+        apiRequest(`http://localhost:8000/api/v1/visits/latest?url=${encodeURIComponent(url)}`),
+        apiRequest(`http://localhost:8000/api/v1/visits?url=${encodeURIComponent(url)}`).then(h => h || []),
+        apiRequest('http://localhost:8000/api/v1/visits/stats')
       ]);
 
-      if (!metricsResponse.ok || !historyResponse.ok || !statsResponse.ok) {
-        throw new Error('Failed to fetch page data');
+      // Handle metrics result
+      if (metrics.status === 'fulfilled') {
+        setCurrentMetrics(metrics.value);
+      } else {
+        console.warn('Failed to fetch metrics:', metrics.reason);
+        setCurrentMetrics(null);
       }
 
-      const [metrics, history, stats] = await Promise.all([
-        metricsResponse.json(),
-        historyResponse.json(),
-        statsResponse.json()
-      ]);
+      // Handle history result
+      if (history.status === 'fulfilled') {
+        setVisitHistory(history.value || []);
+      } else {
+        console.warn('Failed to fetch history:', history.reason);
+        setVisitHistory([]);
+      }
 
-      setCurrentMetrics(metrics);
-      setVisitHistory(history);
-      setGlobalStats(stats);
+      // Handle stats result
+      if (stats.status === 'fulfilled') {
+        setGlobalStats(stats.value);
+      } else {
+        console.warn('Failed to fetch stats:', stats.reason);
+        setGlobalStats(null);
+      }
+
+      // Only show error if all requests failed (likely backend down)
+      if (metrics.status === 'rejected' && history.status === 'rejected' && stats.status === 'rejected') {
+        const firstError = metrics.reason;
+        if (firstError.message.includes('Failed to fetch') || firstError.message.includes('NetworkError')) {
+          setError('Backend server not available. Make sure the backend is running on localhost:8000');
+        } else {
+          setError('Failed to connect to analytics service');
+        }
+      }
+
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch page data');
+      console.error('Unexpected error in fetchPageData:', err);
+      setError('An unexpected error occurred');
     } finally {
       setLoading(false);
     }
@@ -139,7 +161,7 @@ const App: React.FC = () => {
             Current Site: <b>{URLNormalizer.getDisplayUrl(currentUrl)}</b>
           </div>
 
-          {currentMetrics && (
+          {currentMetrics ? (
             <div className="metrics-grid">
               <div className="metric-row">
                 <div className="metric-label">Links</div>
@@ -157,6 +179,11 @@ const App: React.FC = () => {
                 <div className="metric-label">Last visit</div>
                 <div className="metric-value date">{formatDateTime(currentMetrics.created_at)}</div>
               </div>
+            </div>
+          ) : (
+            <div className="no-data-message">
+              <p>📊 No data collected for this page yet</p>
+              <p className="subtext">Visit the page to start tracking analytics</p>
             </div>
           )}
         </section>
@@ -188,16 +215,22 @@ const App: React.FC = () => {
         <section className="history-section">
           <h3>Visit History</h3>
           <div className="history-list">
-            {visitHistory.map((visit) => (
-              <div key={visit.id} className="history-item">
-                <div className="history-date">{formatDateTime(visit.created_at)}</div>
-                <div className="history-stats">
-                  <span>------ {visit.link_count} link(s), </span>
-                  <span>{visit.image_count} images, </span>
-                  <span>{visit.word_count} words ------</span>
+            {visitHistory.length > 0 ? (
+              visitHistory.map((visit) => (
+                <div key={visit.id} className="history-item">
+                  <div className="history-date">{formatDateTime(visit.created_at)}</div>
+                  <div className="history-stats">
+                    <span>------ {visit.link_count} link(s), </span>
+                    <span>{visit.image_count} images, </span>
+                    <span>{visit.word_count} words ------</span>
+                  </div>
                 </div>
+              ))
+            ) : (
+              <div className="no-history-message">
+                <p>No previous visits recorded for this site</p>
               </div>
-            ))}
+            )}
           </div>
         </section>
       </main>
