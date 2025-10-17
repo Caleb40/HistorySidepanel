@@ -108,7 +108,7 @@ body {
   color: #666;
 }
 
-/* History section - FIXED SPACING */
+/* History section */
 .history-section {
   flex: 1;
   display: flex;
@@ -228,4 +228,33 @@ body {
 .history-list::-webkit-scrollbar-thumb {
   background: #e1e5e9;
   border-radius: 2px;
+}
+
+.stats-section {
+  padding: 16px;
+  border-bottom: 1px solid #e1e5e9;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.stat-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat-label {
+  font-size: 11px;
+  color: #666;
+  font-weight: 500;
+}
+
+.stat-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a1a1a;
 }

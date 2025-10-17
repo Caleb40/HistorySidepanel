@@ -11,9 +11,18 @@ interface VisitData {
   image_count: number;
 }
 
+interface GlobalStats {
+  total_visits: number;
+  unique_urls: number;
+  average_links: number;
+  average_words: number;
+  average_images: number;
+}
+
 const App: React.FC = () => {
   const [currentMetrics, setCurrentMetrics] = useState<VisitData | null>(null);
   const [visitHistory, setVisitHistory] = useState<VisitData[]>([]);
+  const [globalStats, setGlobalStats] = useState<GlobalStats | null>(null);
   const [currentUrl, setCurrentUrl] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
@@ -40,22 +49,25 @@ const App: React.FC = () => {
       setLoading(true);
       setError('');
 
-      const [metricsResponse, historyResponse] = await Promise.all([
+      const [metricsResponse, historyResponse, statsResponse] = await Promise.all([
         fetch(`http://localhost:8000/api/v1/visits/latest?url=${encodeURIComponent(url)}`),
-        fetch(`http://localhost:8000/api/v1/visits?url=${encodeURIComponent(url)}`)
+        fetch(`http://localhost:8000/api/v1/visits?url=${encodeURIComponent(url)}`),
+        fetch('http://localhost:8000/api/v1/visits/stats')
       ]);
 
-      if (!metricsResponse.ok || !historyResponse.ok) {
+      if (!metricsResponse.ok || !historyResponse.ok || !statsResponse.ok) {
         throw new Error('Failed to fetch page data');
       }
 
-      const [metrics, history] = await Promise.all([
+      const [metrics, history, stats] = await Promise.all([
         metricsResponse.json(),
-        historyResponse.json()
+        historyResponse.json(),
+        statsResponse.json()
       ]);
 
       setCurrentMetrics(metrics);
       setVisitHistory(history);
+      setGlobalStats(stats);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch page data');
     } finally {
@@ -125,6 +137,30 @@ const App: React.FC = () => {
             </div>
           )}
         </section>
+
+        {globalStats && (
+          <section className="stats-section">
+            <h3>Global Stats</h3>
+            <div className="stats-grid">
+              <div className="stat-row">
+                <div className="stat-label">Total Visits</div>
+                <div className="stat-value">{globalStats.total_visits}</div>
+              </div>
+              <div className="stat-row">
+                <div className="stat-label">Unique Sites</div>
+                <div className="stat-value">{globalStats.unique_urls}</div>
+              </div>
+              <div className="stat-row">
+                <div className="stat-label">Avg. Links</div>
+                <div className="stat-value">{globalStats.average_links}</div>
+              </div>
+              <div className="stat-row">
+                <div className="stat-label">Avg. Words</div>
+                <div className="stat-value">{globalStats.average_words}</div>
+              </div>
+            </div>
+          </section>
+        )}
 
         <section className="history-section">
           <h3>Visit History</h3>
