@@ -142,13 +142,13 @@ async def get_visit_stats(db: AsyncSession = Depends(async_get_db)):
         stats_query = select(
             func.count(PageVisit.id).label('total_visits'),
             func.count(func.distinct(PageVisit.url)).label('unique_urls'),
-            func.round(func.avg(PageVisit.link_count), 2).label('avg_links'),
-            func.round(func.avg(PageVisit.internal_links), 2).label('avg_internal_links'),
-            func.round(func.avg(PageVisit.external_links), 2).label('avg_external_links'),
-            func.round(func.avg(PageVisit.word_count), 2).label('avg_words'),
-            func.round(func.avg(PageVisit.image_count), 2).label('avg_images'),
-            func.round(func.avg(PageVisit.content_images), 2).label('avg_content_images'),
-            func.round(func.avg(PageVisit.decorative_images), 2).label('avg_decorative_images')
+            func.round(func.avg(PageVisit.link_count), 2).label('average_links'),
+            func.round(func.avg(PageVisit.internal_links), 2).label('average_internal_links'),
+            func.round(func.avg(PageVisit.external_links), 2).label('average_external_links'),
+            func.round(func.avg(PageVisit.word_count), 2).label('average_words'),
+            func.round(func.avg(PageVisit.image_count), 2).label('average_images'),
+            func.round(func.avg(PageVisit.content_images), 2).label('average_content_images'),
+            func.round(func.avg(PageVisit.decorative_images), 2).label('average_decorative_images')
         )
 
         result = await db.execute(stats_query)
@@ -156,12 +156,15 @@ async def get_visit_stats(db: AsyncSession = Depends(async_get_db)):
 
         # convert to dictionary with None handling
         stats_dict = {
-            key: getattr(stats, key) or 0
-            for key in [
-                'total_visits', 'unique_urls', 'avg_links', 'avg_internal_links',
-                'avg_external_links', 'avg_words', 'avg_images',
-                'avg_content_images', 'avg_decorative_images'
-            ]
+            "total_visits": stats.total_visits or 0,
+            "unique_urls": stats.unique_urls or 0,
+            "average_links": float(stats.average_links or 0),
+            "average_internal_links": float(stats.average_internal_links or 0),
+            "average_external_links": float(stats.average_external_links or 0),
+            "average_words": float(stats.average_words or 0),
+            "average_images": float(stats.average_images or 0),
+            "average_content_images": float(stats.average_content_images or 0),
+            "average_decorative_images": float(stats.average_decorative_images or 0)
         }
 
         logger.info(f"Retrieved stats: {stats_dict['total_visits']} visits, {stats_dict['unique_urls']} unique URLs")

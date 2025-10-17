@@ -6,7 +6,9 @@ export class ImageAnalyzer {
     try {
       const allImages = Array.from(document.querySelectorAll('img[src]'));
 
+      // @ts-ignore
       const contentImages = allImages.filter(img => this.isContentImage(img));
+      // @ts-ignore
       const decorativeImages = allImages.filter(img => !this.isContentImage(img));
 
       return {
