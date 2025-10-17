@@ -5,35 +5,25 @@
 
 import {PageMetrics} from '@/common';
 import {URLNormalizer} from './urlNormalizer';
+import {ImageAnalyzer, LinkAnalyzer, TextAnalyzer} from "@/content-script";
+
 
 class PageMetricsExtractor {
-  private static cleanText(text: string): string {
-    return text
-      .replace(/[^\w\s]/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
-  }
-
-  private static countWords(): number {
-    const bodyText = document.body.innerText || '';
-    const cleanedText = this.cleanText(bodyText);
-    return cleanedText ? cleanedText.split(/\s+/).length : 0;
-  }
-
-  private static countLinks(): number {
-    return document.querySelectorAll('a').length;
-  }
-
-  private static countImages(): number {
-    return document.querySelectorAll('img').length;
-  }
-
   public static extractMetrics(): PageMetrics {
+    const wordCount =
+      TextAnalyzer.countContentWords();
+    const linkAnalysis = LinkAnalyzer.countContentLinks();
+    const imageAnalysis = ImageAnalyzer.countContentImages();
+
     return {
       url: window.location.href,
-      link_count: this.countLinks(),
-      image_count: this.countImages(),
-      word_count: this.countWords(),
+      link_count: linkAnalysis.total,
+      internal_links: linkAnalysis.internal,
+      external_links: linkAnalysis.external,
+      image_count: imageAnalysis.total,
+      content_images: imageAnalysis.content,
+      decorative_images: imageAnalysis.decorative,
+      word_count: wordCount,
       datetime_visited: new Date().toISOString()
     };
   }
