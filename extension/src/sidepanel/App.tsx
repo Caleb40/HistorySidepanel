@@ -44,8 +44,8 @@ const App: React.FC = () => {
       setError('');
 
       const [metricsResponse, historyResponse] = await Promise.all([
-        fetch(`http://localhost:8000/api/visits/latest?url=${encodeURIComponent(url)}`),
-        fetch(`http://localhost:8000/api/visits?url=${encodeURIComponent(url)}`)
+        fetch(`http://localhost:8000/api/v1/visits/latest?url=${encodeURIComponent(url)}`),
+        fetch(`http://localhost:8000/api/v1/visits?url=${encodeURIComponent(url)}`)
       ]);
 
       if (!metricsResponse.ok || !historyResponse.ok) {
@@ -66,7 +66,7 @@ const App: React.FC = () => {
       setLoading(false);
     }
   };
-
+  
   const handleRefresh = (): void => {
     if (currentUrl) {
       fetchPageData(currentUrl);
