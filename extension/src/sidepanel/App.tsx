@@ -1,5 +1,5 @@
-import React, {useEffect, useState} from 'react';
 import './styles.css';
+import React, {useEffect, useState} from 'react';
 import {formatDateTime} from "@/common";
 
 interface VisitData {
@@ -25,10 +25,7 @@ const App: React.FC = () => {
   const initializeSidepanel = async (): Promise<void> => {
     try {
       const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
-
-      if (!tab?.url) {
-        throw new Error('Could not get current tab URL');
-      }
+      if (!tab?.url) throw new Error('Could not get current tab URL');
 
       setCurrentUrl(tab.url);
       await fetchPageData(tab.url);
@@ -49,7 +46,7 @@ const App: React.FC = () => {
       ]);
 
       if (!metricsResponse.ok || !historyResponse.ok) {
-        throw new Error('Failed to fetch page data from server');
+        throw new Error('Failed to fetch page data');
       }
 
       const [metrics, history] = await Promise.all([
@@ -61,23 +58,20 @@ const App: React.FC = () => {
       setVisitHistory(history);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch page data');
-      console.error('Error fetching page data:', err);
     } finally {
       setLoading(false);
     }
   };
 
   const handleRefresh = (): void => {
-    if (currentUrl) {
-      fetchPageData(currentUrl);
-    }
+    if (currentUrl) fetchPageData(currentUrl);
   };
 
   if (loading) {
     return (
       <div className="loading-state">
         <div className="spinner"></div>
-        <p>Loading page analytics...</p>
+        <p>Loading analytics...</p>
       </div>
     );
   }
@@ -85,8 +79,7 @@ const App: React.FC = () => {
   if (error) {
     return (
       <div className="error-state">
-        <h2>⚠️ Error</h2>
-        <p>{error}</p>
+        <p>Error: {error}</p>
         <button onClick={handleRefresh} className="retry-button">
           Try Again
         </button>
@@ -97,98 +90,60 @@ const App: React.FC = () => {
   return (
     <div className="app">
       <header className="app-header">
-        <h1>📊 Page Analytics</h1>
-        <button onClick={handleRefresh} className="refresh-button" title="Refresh data">
-          🔄
-        </button>
+        <div className="header-content">
+          <h1>Page Analytics</h1>
+          <button onClick={handleRefresh} className="refresh-button" title="Refresh">
+            🔄
+          </button>
+        </div>
       </header>
 
       <main className="app-content">
         <section className="current-page-section">
-          <h2>Current Page</h2>
-          <div className="url-display" title={currentUrl}>
-            {currentUrl}
+          <div className="url-display">
+            Current Site's Link: <b>{currentUrl.replace(/^https?:\/\//, '')}</b>
           </div>
 
-          {currentMetrics ? (
+          {currentMetrics && (
             <div className="metrics-grid">
-              <MetricCard
-                label="Links"
-                value={currentMetrics.link_count}
-                icon="🔗"
-              />
-              <MetricCard
-                label="Images"
-                value={currentMetrics.image_count}
-                icon="🖼️"
-              />
-              <MetricCard
-                label="Words"
-                value={currentMetrics.word_count}
-                icon="📝"
-              />
-              <MetricCard
-                label="Last Visit"
-                value={formatDateTime(currentMetrics.created_at)}
-                icon="🕒"
-                isDate
-              />
+              <div className="metric-row">
+                <div className="metric-label">Number of Links:</div>
+                <div className="metric-value">{currentMetrics.link_count}</div>
+              </div>
+              <div className="metric-row">
+                <div className="metric-label">Images</div>
+                <div className="metric-value">{currentMetrics.image_count}</div>
+              </div>
+              <div className="metric-row">
+                <div className="metric-label">Words</div>
+                <div className="metric-value">{currentMetrics.word_count}</div>
+              </div>
+              <div className="metric-row">
+                <div className="metric-label">Last visit</div>
+                <div className="metric-value date">{formatDateTime(currentMetrics.created_at)}</div>
+              </div>
             </div>
-          ) : (
-            <div className="no-data">No metrics available for this page</div>
           )}
         </section>
 
         <section className="history-section">
-          <h2>Visit History</h2>
-          {visitHistory.length > 0 ? (
-            <div className="history-list">
-              {visitHistory.map((visit) => (
-                <HistoryItem key={visit.id} visit={visit}/>
-              ))}
-            </div>
-          ) : (
-            <div className="no-data">No visit history found</div>
-          )}
+          <h3>Visit History</h3>
+          <div className="history-list">
+            {visitHistory.map((visit) => (
+              <div key={visit.id} className="history-item">
+                <div className="history-date">{formatDateTime(visit.created_at)}</div>
+                <div className="history-stats">
+                  <span>------ {visit.link_count} link(s), </span>
+                  <span>{visit.image_count} images, </span>
+                  <span>{visit.word_count} words ------</span>
+                </div>
+              </div>
+            ))}
+          </div>
         </section>
       </main>
     </div>
   );
 };
-
-// Sub-components for better organization
-interface MetricCardProps {
-  label: string;
-  value: string | number;
-  icon: string;
-  isDate?: boolean;
-}
-
-const MetricCard: React.FC<MetricCardProps> = ({label, value, icon, isDate = false}) => (
-  <div className="metric-card">
-    <div className="metric-icon">{icon}</div>
-    <div className="metric-content">
-      <div className="metric-label">{label}</div>
-      <div className={`metric-value ${isDate ? 'metric-value-date' : ''}`}>
-        {value}
-      </div>
-    </div>
-  </div>
-);
-
-interface HistoryItemProps {
-  visit: VisitData;
-}
-
-const HistoryItem: React.FC<HistoryItemProps> = ({visit}) => (
-  <div className="history-item">
-    <div className="history-date">{formatDateTime(visit.created_at)}</div>
-    <div className="history-metrics">
-      <span>🔗 {visit.link_count}</span>
-      <span>🖼️ {visit.image_count}</span>
-      <span>📝 {visit.word_count}</span>
-    </div>
-  </div>
-);
 
 export default App;
