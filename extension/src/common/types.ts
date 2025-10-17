@@ -1,7 +1,11 @@
 export interface PageMetrics {
   url: string;
   link_count: number;
+  internal_links?: number;      // NEW
+  external_links?: number;      // NEW
   image_count: number;
+  content_images?: number;      // NEW
+  decorative_images?: number;   // NEW
   word_count: number;
   datetime_visited: string;
 }
@@ -11,8 +15,12 @@ export interface VisitData {
   created_at: string;
   url: string;
   link_count: number;
+  internal_links?: number;
+  external_links?: number;
   word_count: number;
   image_count: number;
+  content_images?: number;
+  decorative_images?: number;
 }
 
 export interface GlobalStats {
@@ -21,6 +29,9 @@ export interface GlobalStats {
   average_links: number;
   average_words: number;
   average_images: number;
+  average_internal_links?: number;
+  average_external_links?: number;
+  average_content_images?: number;
 }
 
 export interface MessagePayload {
