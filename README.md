@@ -17,6 +17,8 @@ cd backend
 docker-compose up -d  # Starts FastAPI + PostgreSQL
 ```
 
+After startup, API documentation link will be available at [http://localhost:8000/docs](http://localhost:8000/docs)
+
 ### Chrome Extension
 
 ```bash
