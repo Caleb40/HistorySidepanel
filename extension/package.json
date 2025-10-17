@@ -20,7 +20,8 @@
     "@types/bun": "latest",
     "@types/chrome": "^0.1.24",
     "@types/react": "^19",
-    "@types/react-dom": "^19"
+    "@types/react-dom": "^19",
+    "vite": "^7.1.10"
   },
   "paths": {
     "@/*": [
