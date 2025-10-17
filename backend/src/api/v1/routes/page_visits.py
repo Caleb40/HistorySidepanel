@@ -111,6 +111,7 @@ async def get_latest_visit(
         visit = result.scalar_one_or_none()
 
         if not visit:
+            logger.info(f"No visits found for URL: {url}")
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="No visits found for this URL"
