@@ -183,7 +183,7 @@ const App: React.FC = () => {
           ) : (
             <div className="no-data-message">
               <p>📊 No data collected for this page yet</p>
-              <p className="subtext">Visit the page to start tracking analytics</p>
+              <p className="subtext">Reload the page to start tracking analytics</p>
             </div>
           )}
         </section>
