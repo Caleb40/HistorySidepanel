@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
     response_model=VisitResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Record a page visit",
-    description="Store metrics for a visited webpage including link count, word count, and image count"
+    description="Store metrics for a visited webpage including detailed link and image analysis"
 )
 async def create_visit(
         visit: VisitCreate,
@@ -27,12 +27,15 @@ async def create_visit(
 ):
     """Create a new page visit record"""
     try:
-
         db_visit = PageVisit(
             url=visit.url,
             link_count=visit.link_count,
+            internal_links=visit.internal_links,
+            external_links=visit.external_links,
             word_count=visit.word_count,
             image_count=visit.image_count,
+            content_images=visit.content_images,
+            decorative_images=visit.decorative_images
         )
 
         db.add(db_visit)
@@ -40,7 +43,10 @@ async def create_visit(
         await db.refresh(db_visit)
 
         logger.info(
-            f"Visit recorded for {visit.url} with {visit.link_count} links, {visit.word_count} words, {visit.image_count} images"
+            f"Visit recorded for {visit.url} with "
+            f"{visit.link_count} links ({visit.internal_links or 0} internal, {visit.external_links or 0} external), "
+            f"{visit.word_count} words, "
+            f"{visit.image_count} images ({visit.content_images or 0} content, {visit.decorative_images or 0} decorative)"
         )
 
         return db_visit
@@ -146,18 +152,34 @@ async def get_visit_stats(db: AsyncSession = Depends(async_get_db)):
         avg_links_result = await db.execute(select(func.avg(PageVisit.link_count)))
         avg_links = round(avg_links_result.scalar_one() or 0, 2)
 
+        avg_internal_links_result = await db.execute(select(func.avg(PageVisit.internal_links)))
+        avg_internal_links = round(avg_internal_links_result.scalar_one() or 0, 2)
+
+        avg_external_links_result = await db.execute(select(func.avg(PageVisit.external_links)))
+        avg_external_links = round(avg_external_links_result.scalar_one() or 0, 2)
+
         avg_words_result = await db.execute(select(func.avg(PageVisit.word_count)))
         avg_words = round(avg_words_result.scalar_one() or 0, 2)
 
         avg_images_result = await db.execute(select(func.avg(PageVisit.image_count)))
         avg_images = round(avg_images_result.scalar_one() or 0, 2)
 
+        avg_content_images_result = await db.execute(select(func.avg(PageVisit.content_images)))
+        avg_content_images = round(avg_content_images_result.scalar_one() or 0, 2)
+
+        avg_decorative_images_result = await db.execute(select(func.avg(PageVisit.decorative_images)))
+        avg_decorative_images = round(avg_decorative_images_result.scalar_one() or 0, 2)
+
         return {
             "total_visits": total_visits,
             "unique_urls": unique_urls,
             "average_links": avg_links,
+            "average_internal_links": avg_internal_links,
+            "average_external_links": avg_external_links,
             "average_words": avg_words,
-            "average_images": avg_images
+            "average_images": avg_images,
+            "average_content_images": avg_content_images,
+            "average_decorative_images": avg_decorative_images
         }
 
     except Exception as e:
