@@ -3,7 +3,8 @@
 ## 🎯 Overview
 
 A **fullstack Chrome extension** that displays browsing history and real-time page analytics in a side panel.
-Built with **React + TypeScript (frontend)**, **FastAPI (backend)**, and **PostgreSQL (database)** — all packaged via **Docker**.
+Built with **React + TypeScript (frontend)**, **FastAPI (backend)**, and **PostgreSQL (database)** — all packaged via *
+*Docker**.
 
 ---
 
@@ -28,13 +29,19 @@ npm install && npm run build
 
 ## 🔍 Troubleshooting
 
+> ⚠️ **Note:** This extension is optimized for **Google Chrome**.
+> If the side panel or other features don’t work as expected, try running it specifically
+> in [Google Chrome](https://www.google.com/chrome/).
+
 ### Common Issues
 
 | Problem              | Likely Cause         | Fix                            |
-| -------------------- | -------------------- | ------------------------------ |
+|----------------------|----------------------|--------------------------------|
 | **Blank side panel** | Backend not running  | Ensure FastAPI is on port 8000 |
 | **Build errors**     | Missing dependencies | Run `npm install` again        |
 | **Database issues**  | Volume not persisted | Verify Docker volumes          |
+
+---
 
 ### Debugging Tools
 
@@ -88,7 +95,7 @@ User Action → Side Panel ← Live Updates ← Backend API
 ## 🧱 Key Technical Decisions
 
 | Decision                       | Rationale               | Impact                             |
-| ------------------------------ | ----------------------- | ---------------------------------- |
+|--------------------------------|-------------------------|------------------------------------|
 | **FastAPI + Async SQLAlchemy** | Full async stack        | High concurrency, non-blocking I/O |
 | **PostgreSQL**                 | Reliability + structure | Fast indexed lookups               |
 | **Vite/Bun + React**           | Modern build tooling    | Hot reload, modular entrypoints    |
@@ -117,11 +124,11 @@ User Action → Side Panel ← Live Updates ← Backend API
 
 ```python
 PageVisit:
-  - url (indexed)
-  - word_count
-  - link_count, internal_links, external_links
-  - image_count, content_images, decorative_images
-  - created_at (indexed)
+- url(indexed)
+- word_count
+- link_count, internal_links, external_links
+- image_count, content_images, decorative_images
+- created_at(indexed)
 ```
 
 ---
@@ -138,7 +145,7 @@ PageVisit:
 ## 🔌 Core API Endpoints
 
 | Method | Endpoint                          | Description                 |
-| ------ | --------------------------------- | --------------------------- |
+|--------|-----------------------------------|-----------------------------|
 | `POST` | `/api/v1/visits`                  | Record a page visit         |
 | `GET`  | `/api/v1/visits?url={url}`        | Get visit history for a URL |
 | `GET`  | `/api/v1/visits/latest?url={url}` | Fetch latest visit metrics  |
