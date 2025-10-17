@@ -1,6 +1,6 @@
-# 🧠 History Sidepanel Chrome Extension
+# History Sidepanel Chrome Extension
 
-## 🎯 Overview
+## Overview
 
 A **fullstack Chrome extension** that displays browsing history and real-time page analytics in a side panel.
 Built with **React + TypeScript (frontend)**, **FastAPI (backend)**, and **PostgreSQL (database)** — all packaged via *
@@ -8,16 +8,16 @@ Built with **React + TypeScript (frontend)**, **FastAPI (backend)**, and **Postg
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
-### 🧩 Backend & Database
+### Backend & Database
 
 ```bash
 cd backend
 docker-compose up -d  # Starts FastAPI + PostgreSQL
 ```
 
-### 💻 Chrome Extension
+### Chrome Extension
 
 ```bash
 cd extension
@@ -27,7 +27,7 @@ npm install && npm run build
 
 ---
 
-## 🔍 Troubleshooting
+## Troubleshooting
 
 > ⚠️ **Note:** This extension is optimized for **Google Chrome**.
 > If the side panel or other features don’t work as expected, try running it specifically
@@ -51,16 +51,16 @@ npm install && npm run build
 
 ---
 
-## ⚙️ Key Features
+## Key Features
 
-### 🧠 Page Analysis
+### Page Analysis
 
 * **Text Analysis** – Content-aware word counting
 * **Link Classification** – Internal vs external, with relevance filtering
 * **Image Analysis** – Content vs decorative classification
 * **URL Normalization** – Prevent duplicate metrics
 
-### ⚡ Real-Time Updates
+### Real-Time Updates
 
 * Tab switching detection
 * SPA navigation support
@@ -68,7 +68,7 @@ npm install && npm run build
 
 ---
 
-## 🏗️ System Architecture
+## System Architecture
 
 ![System Architecture](docs/system-design.png)
 
@@ -92,7 +92,7 @@ User Action → Side Panel ← Live Updates ← Backend API
 
 ---
 
-## 🧱 Key Technical Decisions
+## Key Technical Decisions
 
 | Decision                       | Rationale               | Impact                             |
 |--------------------------------|-------------------------|------------------------------------|
@@ -120,7 +120,7 @@ User Action → Side Panel ← Live Updates ← Backend API
 
 ---
 
-## 🧩 Data Model
+## Data Model
 
 ```python
 PageVisit:
@@ -133,7 +133,7 @@ PageVisit:
 
 ---
 
-## 🔒 Security & Constraints
+## Security & Constraints
 
 * Chrome sandbox → **isolated script execution**
 * Backend runs on **localhost only**
@@ -142,7 +142,7 @@ PageVisit:
 
 ---
 
-## 🔌 Core API Endpoints
+## Core API Endpoints
 
 | Method | Endpoint                          | Description                 |
 |--------|-----------------------------------|-----------------------------|
@@ -154,7 +154,7 @@ PageVisit:
 
 ---
 
-## ⚖️ Trade-offs & Limitations
+## Trade-offs & Limitations
 
 * No authentication (local-only usage)
 * SPA detection may miss custom routers
@@ -163,7 +163,7 @@ PageVisit:
 
 ---
 
-## ✅ Core Requirements Met
+## Core Requirements Met
 
 * Chrome extension with **side panel interface**
 * Page visit tracking with **text, link, and image metrics**
@@ -173,7 +173,7 @@ PageVisit:
 
 ---
 
-## 🚀 Enhanced Features
+## Enhanced Features
 
 * **SPA Support** – Compatible with React, Vue, Angular
 * **Performance Optimized** – Efficient DOM scanning & async backend
