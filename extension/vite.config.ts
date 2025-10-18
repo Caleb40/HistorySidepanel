@@ -1,24 +1,22 @@
-import { defineConfig } from 'vite';
+import {defineConfig} from 'vite';
 import react from '@vitejs/plugin-react';
-import { resolve } from 'path';
+import {resolve} from 'path';
 
+const buildTarget = process.env.BUILD_TARGET;
 export default defineConfig({
   plugins: [react()],
   build: {
     outDir: 'dist',
-    emptyOutDir: true,
+    emptyOutDir: buildTarget === 'main',
     rollupOptions: {
-      input: {
-        main: resolve(__dirname, 'src/sidepanel/main.tsx'),
-        background: resolve(__dirname, 'src/background/background.ts'),
-        contentScript: resolve(__dirname, 'src/content-script/contentScript.ts')
-      },
+      // @ts-ignore
+      input: getInput(),
       output: {
         entryFileNames: '[name].js',
         chunkFileNames: '[name].js',
-        assetFileNames: '[name].[ext]'
-      },
-      external: ['react', 'react-dom'] // Externalize React to reduce bundle size
+        assetFileNames: '[name].[ext]',
+        format: 'iife'
+      }
     }
   },
   resolve: {
@@ -30,3 +28,14 @@ export default defineConfig({
     'process.env.NODE_ENV': '"production"'
   }
 });
+
+function getInput() {
+  switch (buildTarget) {
+    case 'background':
+      return {background: resolve(__dirname, 'src/background/background.ts')};
+    case 'contentScript':
+      return {contentScript: resolve(__dirname, 'src/content-script/contentScript.ts')};
+    default:
+      return {main: resolve(__dirname, 'src/sidepanel/main.tsx')};
+  }
+}

@@ -6,11 +6,11 @@
   "scripts": {
     "dev": "bun --hot src/sidepanel/main.tsx",
     "build": "node build.js",
-    "build:vite": "vite build",
+    "build:vite": "vite build && BUILD_TARGET=background vite build && BUILD_TARGET=contentScript vite build",
     "build:bun": "bun run build:sidepanel && bun run build:background && bun run build:content && bun run copy:public",
-    "build:sidepanel": "bun build src/sidepanel/main.tsx --outdir=dist --target=browser --format=esm --external:react --external:react-dom",
-    "build:background": "bun build src/background/background.ts --outdir=dist --target=browser --format=esm",
-    "build:content": "bun build src/content-script/contentScript.ts --outdir=dist --target=browser --format=esm",
+    "build:sidepanel": "vite build",
+    "build:background": "BUILD_TARGET=background vite build",
+    "build:content": "BUILD_TARGET=contentScript vite build",
     "copy:public": "cp public/* dist/ 2>/dev/null || true",
     "start": "NODE_ENV=production bun src/sidepanel/main.tsx"
   },

@@ -106,7 +106,7 @@ User Action → Side Panel ← Live Updates ← Backend API
 
 ---
 
-## ⚡ Performance & Reliability
+## Performance & Reliability
 
 ### Backend
 
