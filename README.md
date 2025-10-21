@@ -3,7 +3,8 @@
 ## Overview
 
 A **fullstack Chrome extension** that displays browsing history and real-time page analytics in a side panel.
-Built with **React + TypeScript (frontend)**, **FastAPI (backend)**, and **PostgreSQL (database)** — all packaged via **Docker**.
+Built with **React + TypeScript (frontend)**, **FastAPI (backend)**, and **PostgreSQL (database)** — all packaged via *
+*Docker**.
 
 ---
 
@@ -38,14 +39,7 @@ The backend includes comprehensive test coverage for both API routes and service
 cd backend
 
 # Run all tests
-pytest -v
-
-# Run tests with coverage report
-pytest --cov=src --cov-report=html
-
-# Run specific test file
-pytest tests/test_page_visit_routes.py -v
-pytest tests/test_page_visit_service.py -v
+ pytest -v --asyncio-mode=auto      
 ```
 
 ### Test Structure
@@ -66,6 +60,7 @@ tests/
 ### Test Database
 
 Tests automatically:
+
 - Create a fresh test database
 - Set up all required tables
 - Run tests in isolation
@@ -197,11 +192,11 @@ PageVisit:
 
 | Method | Endpoint                          | Description                 | Test Coverage |
 |--------|-----------------------------------|-----------------------------|---------------|
-| `POST` | `/api/v1/visits`                  | Record a page visit         | ✅            |
-| `GET`  | `/api/v1/visits?url={url}`        | Get visit history for a URL | ✅            |
-| `GET`  | `/api/v1/visits/latest?url={url}` | Fetch latest visit metrics  | ✅            |
-| `GET`  | `/api/v1/visits/stats`            | Aggregated site analytics   | ✅            |
-| `GET`  | `/api/v1/visits/recent`           | Recent page visits          | ✅            |
+| `POST` | `/api/v1/visits`                  | Record a page visit         | ✅             |
+| `GET`  | `/api/v1/visits?url={url}`        | Get visit history for a URL | ✅             |
+| `GET`  | `/api/v1/visits/latest?url={url}` | Fetch latest visit metrics  | ✅             |
+| `GET`  | `/api/v1/visits/stats`            | Aggregated site analytics   | ✅             |
+| `GET`  | `/api/v1/visits/recent`           | Recent page visits          | ✅             |
 
 ---
 
