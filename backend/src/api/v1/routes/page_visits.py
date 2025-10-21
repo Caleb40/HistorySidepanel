@@ -3,9 +3,8 @@ from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.params import Query
-from sqlalchemy import select, desc, func
 from sqlalchemy.ext.asyncio.session import AsyncSession
-
+from src.api.v1.services.page_visit_service import PageVisitService
 from src.core.db.database import async_get_db
 from src.models.page_visit import PageVisit
 from src.schemas.page_visit import VisitCreate, VisitResponse, StatsResponse
@@ -26,38 +25,17 @@ async def create_visit(
         db: AsyncSession = Depends(async_get_db)
 ):
     """Create a new page visit record"""
-    try:
-        db_visit = PageVisit(
-            url=visit.url,
-            link_count=visit.link_count,
-            internal_links=visit.internal_links,
-            external_links=visit.external_links,
-            word_count=visit.word_count,
-            image_count=visit.image_count,
-            content_images=visit.content_images,
-            decorative_images=visit.decorative_images
-        )
+    service = PageVisitService(db)
+    db_visit = await service.create_visit(visit)
 
-        db.add(db_visit)
-        await db.commit()
-        await db.refresh(db_visit)
+    logger.info(
+        f"Visit recorded for {visit.url} with "
+        f"{visit.link_count} links ({visit.internal_links or 0} internal, {visit.external_links or 0} external), "
+        f"{visit.word_count} words, "
+        f"{visit.image_count} images ({visit.content_images or 0} content, {visit.decorative_images or 0} decorative)"
+    )
 
-        logger.info(
-            f"Visit recorded for {visit.url} with "
-            f"{visit.link_count} links ({visit.internal_links or 0} internal, {visit.external_links or 0} external), "
-            f"{visit.word_count} words, "
-            f"{visit.image_count} images ({visit.content_images or 0} content, {visit.decorative_images or 0} decorative)"
-        )
-
-        return db_visit
-
-    except Exception as e:
-        await db.rollback()
-        logger.error(f"Error creating visit: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to create visit record"
-        )
+    return db_visit
 
 
 @router.get(
@@ -71,23 +49,10 @@ async def get_visits_by_url(
         db: AsyncSession = Depends(async_get_db)
 ):
     """Get all visits for a specific URL"""
-    try:
-        result = await db.execute(
-            select(PageVisit)
-            .where(PageVisit.url == url)
-            .order_by(desc(PageVisit.created_at))
-        )
-        visits = result.scalars().all()
-
-        logger.info(f"Retrieved {len(visits)} visits for {url}")
-        return visits
-
-    except Exception as e:
-        logger.error(f"Error retrieving visits: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve visits"
-        )
+    service = PageVisitService(db)
+    visits = await service.get_visits_by_url(url)
+    logger.info(f"Retrieved {len(visits)} visits for {url}")
+    return visits
 
 
 @router.get(
@@ -101,33 +66,17 @@ async def get_latest_visit(
         db: AsyncSession = Depends(async_get_db)
 ):
     """Get the most recent visit for a specific URL"""
-    try:
-        result = await db.execute(
-            select(PageVisit)
-            .where(PageVisit.url == url)
-            .order_by(desc(PageVisit.created_at))
-            .limit(1)
-        )
-        visit = result.scalar_one_or_none()
+    service = PageVisitService(db)
+    visit = await service.get_latest_visit(url)
 
-        if not visit:
-            logger.info(f"No visits found for URL: {url}")
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="No visits found for this URL"
-            )
-
-        logger.info(f"Retrieved latest visit for {url}")
-        return visit
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error retrieving latest visit: {str(e)}", exc_info=True)
+    if not visit:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve latest visit"
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No visits found for this URL"
         )
+
+    logger.info(f"Retrieved latest visit for {url}")
+    return visit
 
 
 @router.get(
@@ -138,45 +87,11 @@ async def get_latest_visit(
 )
 async def get_visit_stats(db: AsyncSession = Depends(async_get_db)):
     """Get overall statistics about visits"""
-    try:
-        # Fetch all relevant stats in one query, and perform rounding from the DB for extra performance
-        stats_query = select(
-            func.count(PageVisit.id).label('total_visits'),
-            func.count(func.distinct(PageVisit.url)).label('unique_urls'),
-            func.round(func.avg(PageVisit.link_count), 2).label('average_links'),
-            func.round(func.avg(PageVisit.internal_links), 2).label('average_internal_links'),
-            func.round(func.avg(PageVisit.external_links), 2).label('average_external_links'),
-            func.round(func.avg(PageVisit.word_count), 2).label('average_words'),
-            func.round(func.avg(PageVisit.image_count), 2).label('average_images'),
-            func.round(func.avg(PageVisit.content_images), 2).label('average_content_images'),
-            func.round(func.avg(PageVisit.decorative_images), 2).label('average_decorative_images')
-        )
+    service = PageVisitService(db)
+    stats = await service.get_visit_stats()
 
-        result = await db.execute(stats_query)
-        stats = result.first()
-
-        # convert to dictionary with None handling
-        stats_dict = {
-            "total_visits": stats.total_visits or 0,
-            "unique_urls": stats.unique_urls or 0,
-            "average_links": float(stats.average_links or 0),
-            "average_internal_links": float(stats.average_internal_links or 0),
-            "average_external_links": float(stats.average_external_links or 0),
-            "average_words": float(stats.average_words or 0),
-            "average_images": float(stats.average_images or 0),
-            "average_content_images": float(stats.average_content_images or 0),
-            "average_decorative_images": float(stats.average_decorative_images or 0)
-        }
-
-        logger.info(f"Retrieved stats: {stats_dict['total_visits']} visits, {stats_dict['unique_urls']} unique URLs")
-        return stats_dict
-
-    except Exception as e:
-        logger.error(f"Error retrieving stats: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve statistics"
-        )
+    logger.info(f"Retrieved stats: {stats['total_visits']} visits, {stats['unique_urls']} unique URLs")
+    return stats
 
 
 @router.get(
@@ -190,20 +105,8 @@ async def get_recent_visits(
         db: AsyncSession = Depends(async_get_db)
 ):
     """Get the most recent visits across all URLs"""
-    try:
-        result = await db.execute(
-            select(PageVisit)
-            .order_by(desc(PageVisit.created_at))
-            .limit(limit)
-        )
-        visits = result.scalars().all()
+    service = PageVisitService(db)
+    visits = await service.get_recent_visits(limit)
 
-        logger.info(f"Retrieved {len(visits)} recent visits")
-        return visits
-
-    except Exception as e:
-        logger.error(f"Error retrieving recent visits: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve recent visits"
-        )
+    logger.info(f"Retrieved {len(visits)} recent visits")
+    return visits
