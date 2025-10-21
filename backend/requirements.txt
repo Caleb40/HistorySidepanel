@@ -5,7 +5,9 @@ asyncpg==0.30.0
 certifi==2025.10.5
 click==8.3.0
 fastapi==0.119.0
+greenlet==3.2.4
 h11==0.16.0
+-e git+ssh://git@github.com/Caleb40/HistorySidepanel.git@680452fb31aa20ca0b15c82fc6b1753fa6496215#egg=history_sidepanel_backend
 httpcore==1.0.9
 httpx==0.28.1
 idna==3.11

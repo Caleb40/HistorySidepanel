@@ -5,7 +5,6 @@ import sys
 import pytest
 from dotenv import load_dotenv
 from fastapi import FastAPI
-from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from starlette.testclient import TestClient

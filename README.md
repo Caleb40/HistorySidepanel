@@ -3,8 +3,7 @@
 ## Overview
 
 A **fullstack Chrome extension** that displays browsing history and real-time page analytics in a side panel.
-Built with **React + TypeScript (frontend)**, **FastAPI (backend)**, and **PostgreSQL (database)** — all packaged via *
-*Docker**.
+Built with **React + TypeScript (frontend)**, **FastAPI (backend)**, and **PostgreSQL (database)** — all packaged via **Docker**.
 
 ---
 
@@ -29,6 +28,51 @@ npm install && npm run build
 
 ---
 
+## Testing
+
+### Backend Tests
+
+The backend includes comprehensive test coverage for both API routes and service layer:
+
+```bash
+cd backend
+
+# Run all tests
+pytest -v
+
+# Run tests with coverage report
+pytest --cov=src --cov-report=html
+
+# Run specific test file
+pytest tests/test_page_visit_routes.py -v
+pytest tests/test_page_visit_service.py -v
+```
+
+### Test Structure
+
+```
+tests/
+├── conftest.py           # Test fixtures and database setup
+├── test_page_visit_routes.py     # API endpoint tests
+└── test_page_visit_service.py    # Business logic tests
+```
+
+### Test Coverage
+
+- **API Route Tests**: HTTP endpoints, request/response validation, status codes
+- **Service Layer Tests**: Business logic, database operations, error handling
+- **Database Integration**: Real PostgreSQL database with test isolation
+
+### Test Database
+
+Tests automatically:
+- Create a fresh test database
+- Set up all required tables
+- Run tests in isolation
+- Clean up after test completion
+
+---
+
 ## Troubleshooting
 
 > ⚠️ **Note:** This extension is optimized for **Google Chrome**.
@@ -42,6 +86,7 @@ npm install && npm run build
 | **Blank side panel** | Backend not running  | Ensure FastAPI is on port 8000 |
 | **Build errors**     | Missing dependencies | Run `npm install` again        |
 | **Database issues**  | Volume not persisted | Verify Docker volumes          |
+| **Test failures**    | Database connection  | Check PostgreSQL is running    |
 
 ---
 
@@ -50,6 +95,8 @@ npm install && npm run build
 * Chrome **DevTools** → inspect extension UI
 * **Docker logs** → backend service logs
 * **Network tab** → inspect API requests
+* **pytest -v** → detailed test output
+* **pytest --cov** → coverage analysis
 
 ---
 
@@ -103,6 +150,7 @@ User Action → Side Panel ← Live Updates ← Backend API
 | **Vite/Bun + React**           | Modern build tooling    | Hot reload, modular entrypoints    |
 | **Event-Driven Messaging**     | Real-time UI updates    | Decoupled communication            |
 | **Dockerized Services**        | Environment consistency | Easy deployment & isolation        |
+| **Comprehensive Testing**      | Code quality            | Reliable API, fewer bugs           |
 
 ---
 
@@ -113,6 +161,7 @@ User Action → Side Panel ← Live Updates ← Backend API
 * Async I/O with connection pooling
 * Indexed URLs + timestamps for fast lookups
 * Structured logging for low-latency debugging
+* Automated tests for regression prevention
 
 ### Extension
 
@@ -146,13 +195,13 @@ PageVisit:
 
 ## Core API Endpoints
 
-| Method | Endpoint                          | Description                 |
-|--------|-----------------------------------|-----------------------------|
-| `POST` | `/api/v1/visits`                  | Record a page visit         |
-| `GET`  | `/api/v1/visits?url={url}`        | Get visit history for a URL |
-| `GET`  | `/api/v1/visits/latest?url={url}` | Fetch latest visit metrics  |
-| `GET`  | `/api/v1/visits/stats`            | Aggregated site analytics   |
-| `GET`  | `/api/v1/visits/recent`           | Recent page visits          |
+| Method | Endpoint                          | Description                 | Test Coverage |
+|--------|-----------------------------------|-----------------------------|---------------|
+| `POST` | `/api/v1/visits`                  | Record a page visit         | ✅            |
+| `GET`  | `/api/v1/visits?url={url}`        | Get visit history for a URL | ✅            |
+| `GET`  | `/api/v1/visits/latest?url={url}` | Fetch latest visit metrics  | ✅            |
+| `GET`  | `/api/v1/visits/stats`            | Aggregated site analytics   | ✅            |
+| `GET`  | `/api/v1/visits/recent`           | Recent page visits          | ✅            |
 
 ---
 
@@ -172,6 +221,7 @@ PageVisit:
 * **FastAPI + PostgreSQL** backend
 * **Dockerized** deployment with persistence
 * Real-time navigation updates
+* **Comprehensive test suite** for reliability
 
 ---
 
