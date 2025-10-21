@@ -14,9 +14,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.docs import get_redoc_html
 from fastapi.openapi.utils import get_openapi
 from fastapi.security import HTTPBasic
+from sqlalchemy.exc import IntegrityError, NoResultFound, SQLAlchemyError
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
+from .exceptions import DatabaseError, NotFoundError, ValidationError
 from .exceptions.http_exceptions import CustomApplicationException
 
 security = HTTPBasic()
@@ -64,94 +66,97 @@ def lifespan_factory(
     return lifespan
 
 
-# -------------- application --------------
-def create_application(
-        router: APIRouter,
-        settings: (
-                DatabaseSettings
-                | AppSettings
-                | EnvironmentSettings
-        ),
-        create_tables_on_start: bool = True,
-        **kwargs: Any,
-) -> FastAPI:
-    """Creates and configures a FastAPI application based on the provided settings.
-
-    This function initializes a FastAPI application and configures it with various settings
-    and tasks based on the type of the `settings` object provided.
-
-    Parameters
-    ----------
-    router : APIRouter
-        The APIRouter object containing the routes to be included in the FastAPI application.
-
-    settings
-        An instance representing the settings for configuring the FastAPI application.
-        It determines the configuration applied:
-
-        - AppSettings: Configures basic app metadata like name, description, contact, and license info.
-        - DatabaseSettings: Adds event tasks for initializing database tables during startup.
-        - EnvironmentSettings: Conditionally sets documentation URLs and integrates custom routes for API documentation
-          based on the environment type.
-
-    create_tables_on_start : bool
-        A flag to indicate whether to create database tables on application startup.
-        Defaults to True.
-
-    **kwargs
-        Additional keyword arguments passed directly to the FastAPI constructor.
-
-    Returns
-    -------
-    FastAPI
-        A fully configured FastAPI application instance.
-
-    The function configures the FastAPI application with different features and behaviors
-    based on the provided settings. It includes setting up database connections,
-    client-side caching, and customizing the API documentation based on the environment settings.
-    """
-    # --- before creating application ---
-    if isinstance(settings, AppSettings):
-        to_update = {
-            "title": settings.APP_NAME,
-            "description": settings.APP_DESCRIPTION,
-            "contact": {"name": settings.CONTACT_NAME, "email": settings.CONTACT_EMAIL},
-            "license_info": {"name": settings.LICENSE_NAME},
-        }
-        kwargs.update(to_update)
-
-    if isinstance(settings, EnvironmentSettings):
-        kwargs.update({"docs_url": None, "redoc_url": None, "openapi_url": None})
-
-    lifespan = lifespan_factory(settings, create_tables_on_start=create_tables_on_start)
-
-    application = FastAPI(lifespan=lifespan, **kwargs)
-
-    origins = [
-        # *allowed_origins,
-        "http://localhost:3000",
-    ]
-
-    application.add_middleware(
-        CORSMiddleware,
-        allow_origins=origins,
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
-    application.include_router(router)
+# -------------- Exception Handlers --------------
+def setup_exception_handlers(application: FastAPI, settings: Any) -> None:
+    """Setup all exception handlers with consistent response format"""
 
     @application.exception_handler(CustomApplicationException)
     async def custom_application_exception_handler(
             request: Request, exc: CustomApplicationException
     ) -> JSONResponse:
+        """Handle custom application exceptions"""
+        # Log with appropriate level based on status code
+        if exc.status_code >= 500:
+            logging.error(f"CustomApplicationException {exc.status_code}: {exc.detail}", exc_info=True)
+        else:
+            logging.warning(f"CustomApplicationException {exc.status_code}: {exc.detail}")
+
+        error_name = "server_error" if exc.status_code >= 500 else "request_error"
+
         return JSONResponse(
             status_code=exc.status_code,
             content={
-                "error": exc.error,
-                "message": exc.detail,
+                "error": (
+                    error_name
+                    if settings.ENVIRONMENT == EnvironmentOption.PRODUCTION
+                    else getattr(exc, "error", type(exc).__name__)
+                ),
+                "message": (
+                    exc.detail
+                    if exc.status_code < 500 or settings.ENVIRONMENT != EnvironmentOption.PRODUCTION
+                    else "An unexpected error occurred. Please try again later."
+                ),
                 "status_code": exc.status_code,
                 "data": exc.data,
+            },
+        )
+
+    @application.exception_handler(DatabaseError)
+    async def database_error_handler(
+            request: Request, exc: DatabaseError
+    ) -> JSONResponse:
+        """Handle database operation errors"""
+        logging.error(f"DatabaseError: {exc.message}", exc_info=True)
+
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={
+                "error": (
+                    "database_error"
+                    if settings.ENVIRONMENT == EnvironmentOption.PRODUCTION
+                    else type(exc).__name__
+                ),
+                "message": (
+                    "A database error occurred. Please try again later."
+                    if settings.ENVIRONMENT == EnvironmentOption.PRODUCTION
+                    else exc.message
+                ),
+                "status_code": exc.status_code,
+                "data": {},
+            },
+        )
+
+    @application.exception_handler(NotFoundError)
+    async def not_found_error_handler(
+            request: Request, exc: NotFoundError
+    ) -> JSONResponse:
+        """Handle resource not found errors"""
+        logging.info(f"NotFoundError: {exc.message}")
+
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={
+                "error": "not_found",
+                "message": exc.message,
+                "status_code": exc.status_code,
+                "data": {},
+            },
+        )
+
+    @application.exception_handler(ValidationError)
+    async def validation_error_handler(
+            request: Request, exc: ValidationError
+    ) -> JSONResponse:
+        """Handle data validation errors"""
+        logging.warning(f"ValidationError: {exc.message}")
+
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={
+                "error": "validation_error",
+                "message": exc.message,
+                "status_code": exc.status_code,
+                "data": {},
             },
         )
 
@@ -159,6 +164,7 @@ def create_application(
     async def validation_exception_handler(
             request: Request, exc: RequestValidationError
     ) -> JSONResponse:
+        """Handle FastAPI request validation errors"""
         # extract the raw list of error dicts
         raw_errors = exc.errors()
         # Turn them into JSON-serializable form
@@ -190,10 +196,16 @@ def create_application(
 
         human_msg = ";; ".join(messages) or "Validation error"
 
+        logging.warning(f"RequestValidationError: {human_msg}")
+
         return JSONResponse(
             status_code=422,
             content={
-                "error": safe_errors,
+                "error": (
+                    "validation_error"
+                    if settings.ENVIRONMENT == EnvironmentOption.PRODUCTION
+                    else safe_errors
+                ),
                 "message": human_msg,
                 "status_code": 422,
                 "data": {},
@@ -202,19 +214,23 @@ def create_application(
 
     @application.exception_handler(HTTPException)
     async def http_exception_handler(request: Request, exc: HTTPException):
+        """Handle FastAPI HTTP exceptions"""
         # Log full exception details
-        logging.error(exc)
+        if exc.status_code >= 500:
+            logging.error(f"HTTPException {exc.status_code}: {exc.detail}", exc_info=True)
+        else:
+            logging.warning(f"HTTPException {exc.status_code}: {exc.detail}")
 
         return JSONResponse(
             content={
                 "error": (
-                    "request_error"
+                    "request_error" if exc.status_code < 500 else "server_error"
                     if settings.ENVIRONMENT == EnvironmentOption.PRODUCTION
                     else getattr(exc, "name", type(exc).__name__)
                 ),
                 "message": (
                     exc.detail
-                    if exc.status_code < 500
+                    if exc.status_code < 500 or settings.ENVIRONMENT != EnvironmentOption.PRODUCTION
                     else "An unexpected error occurred. Please try again later."
                 ),
                 "status_code": exc.status_code,
@@ -223,10 +239,78 @@ def create_application(
             status_code=exc.status_code,
         )
 
+    # SQLAlchemy specific exception handlers
+    @application.exception_handler(IntegrityError)
+    async def integrity_error_handler(request: Request, exc: IntegrityError):
+        """Handle database integrity errors (unique constraints, foreign key violations)"""
+        logging.error(f"IntegrityError: {str(exc)}", exc_info=True)
+
+        message = "Data integrity error"
+        if "unique constraint" in str(exc).lower():
+            message = "Duplicate entry found"
+        elif "foreign key" in str(exc).lower():
+            message = "Referenced resource not found"
+
+        return JSONResponse(
+            status_code=409,
+            content={
+                "error": (
+                    "conflict"
+                    if settings.ENVIRONMENT == EnvironmentOption.PRODUCTION
+                    else "IntegrityError"
+                ),
+                "message": (
+                    message
+                    if settings.ENVIRONMENT == EnvironmentOption.PRODUCTION
+                    else f"{message}: {str(exc)}"
+                ),
+                "status_code": 409,
+                "data": {},
+            },
+        )
+
+    @application.exception_handler(NoResultFound)
+    async def no_result_found_handler(request: Request, exc: NoResultFound):
+        """Handle no result found errors from SQLAlchemy"""
+        logging.info(f"NoResultFound: {str(exc)}")
+
+        return JSONResponse(
+            status_code=404,
+            content={
+                "error": "not_found",
+                "message": "Requested resource not found",
+                "status_code": 404,
+                "data": {},
+            },
+        )
+
+    @application.exception_handler(SQLAlchemyError)
+    async def sqlalchemy_error_handler(request: Request, exc: SQLAlchemyError):
+        """Handle generic SQLAlchemy errors"""
+        logging.error(f"SQLAlchemyError: {str(exc)}", exc_info=True)
+
+        return JSONResponse(
+            status_code=500,
+            content={
+                "error": (
+                    "database_error"
+                    if settings.ENVIRONMENT == EnvironmentOption.PRODUCTION
+                    else "SQLAlchemyError"
+                ),
+                "message": (
+                    "A database error occurred. Please try again later."
+                    if settings.ENVIRONMENT == EnvironmentOption.PRODUCTION
+                    else f"Database error: {str(exc)}"
+                ),
+                "status_code": 500,
+                "data": {},
+            },
+        )
+
     @application.exception_handler(Exception)
     async def generic_exception_handler(request: Request, exc: Exception):
-        # Log full exception with traceback
-        logging.error(exc)
+        """Handle any unhandled exceptions"""
+        logging.error(f"Unhandled exception: {str(exc)}", exc_info=True)
 
         return JSONResponse(
             status_code=500,
@@ -242,6 +326,55 @@ def create_application(
             },
         )
 
+
+# -------------- application factory --------------
+def create_application(
+        router: APIRouter,
+        settings: DatabaseSettings | AppSettings | EnvironmentSettings,
+        create_tables_on_start: bool = True,
+        **kwargs: Any,
+) -> FastAPI:
+    """Creates and configures a FastAPI application with enhanced error handling."""
+
+    # Configure application metadata
+    if isinstance(settings, AppSettings):
+        to_update = {
+            "title": settings.APP_NAME,
+            "description": settings.APP_DESCRIPTION,
+            "contact": {"name": settings.CONTACT_NAME, "email": settings.CONTACT_EMAIL},
+            "license_info": {"name": settings.LICENSE_NAME},
+        }
+        kwargs.update(to_update)
+
+    if isinstance(settings, EnvironmentSettings):
+        kwargs.update({"docs_url": None, "redoc_url": None, "openapi_url": None})
+
+    lifespan = lifespan_factory(settings, create_tables_on_start=create_tables_on_start)
+
+    application = FastAPI(lifespan=lifespan, **kwargs)
+
+    # CORS configuration
+    origins = [
+        "http://localhost:3000",
+        "http://localhost:5173",  # Vite dev server
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:5173",
+    ]
+
+    application.add_middleware(
+        CORSMiddleware,
+        allow_origins=origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+    application.include_router(router)
+
+    # Setup all exception handlers
+    setup_exception_handlers(application, settings)
+
+    # Documentation routes for non-production environments
     if isinstance(settings, EnvironmentSettings):
         docs_router = APIRouter()
 
