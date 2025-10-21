@@ -8,6 +8,7 @@ from fastapi import FastAPI
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
+from starlette.testclient import TestClient
 
 load_dotenv()
 
@@ -95,7 +96,7 @@ async def test_app():
 
 
 @pytest.fixture()
-async def async_client(test_app):
-    """Async client fixture for making requests"""
-    async with AsyncClient(app=test_app, base_url="http://test") as client:
+def client(test_app):
+    """Test client fixture for making requests"""
+    with TestClient(test_app) as client:
         yield client
