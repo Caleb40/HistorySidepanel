@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class VisitCreate(BaseModel):
@@ -15,8 +15,8 @@ class VisitCreate(BaseModel):
     decorative_images: Optional[int] = Field(None, ge=0, description="Number of decorative images")
     datetime_visited: Optional[datetime] = Field(None, description="When the visit occurred")
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "url": "https://example.com",
                 "link_count": 25,
@@ -28,6 +28,7 @@ class VisitCreate(BaseModel):
                 "decorative_images": 2
             }
         }
+    )
 
 
 class VisitResponse(BaseModel):
@@ -43,8 +44,7 @@ class VisitResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PaginatedVisitsResponse(BaseModel):
@@ -52,6 +52,8 @@ class PaginatedVisitsResponse(BaseModel):
     total: int
     page: int
     items_per_page: int
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class StatsResponse(BaseModel):
@@ -65,5 +67,4 @@ class StatsResponse(BaseModel):
     average_content_images: Optional[float] = None
     average_decorative_images: Optional[float] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
